@@ -4,6 +4,8 @@ A terminal typing test. No browser needed. Lightweight, simple, powerful.
 
 Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
 
+***Disclaimer***: On release 1.0.0, only the words mode works despite some of the code and help menus mentioning
+later planned modes that i have not released yet
 
 
 typoist in action
