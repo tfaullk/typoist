@@ -1,0 +1,9 @@
+name = "solarized_dark"
+background = [0, 43, 54]
+foreground = [147, 161, 161]
+correct = [133, 153, 0]
+incorrect = [220, 50, 47]
+pending = [88, 110, 117]
+cursor = [38, 139, 210]
+accent = [108, 113, 196]
+sub = [255, 217, 209]

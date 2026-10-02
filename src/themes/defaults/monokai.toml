@@ -1,0 +1,9 @@
+name = "monokai"
+background = [39, 40, 34]
+foreground = [248, 248, 242]
+correct = [166, 226, 46]
+incorrect = [249, 38, 114]
+pending = [117, 113, 94]
+cursor = [253, 151, 31]
+accent = [174, 129, 255]
+sub = [117, 113, 94]

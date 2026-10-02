@@ -1,0 +1,9 @@
+name = "everforest"
+background = [45, 53, 59]
+foreground = [211, 198, 170]
+correct = [167, 192, 128]
+incorrect = [230, 126, 128]
+pending = [133, 146, 137]
+cursor = [230, 152, 117]
+accent = [127, 187, 179]
+sub = [133, 146, 137]

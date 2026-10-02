@@ -1,0 +1,9 @@
+name = "kanagawa"
+background = [31, 31, 40]
+foreground = [220, 215, 186]
+correct = [135, 169, 135]
+incorrect = [195, 64, 67]
+pending = [114, 113, 105]
+cursor = [255, 158, 59]
+accent = [126, 156, 216]
+sub = [114, 113, 105]

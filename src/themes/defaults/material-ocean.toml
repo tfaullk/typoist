@@ -1,0 +1,9 @@
+name = "material-ocean"
+background = [15, 17, 26]
+foreground = [238, 255, 255]
+correct = [195, 232, 141]
+incorrect = [240, 113, 120]
+pending = [84, 110, 122]
+cursor = [255, 203, 107]
+accent = [130, 170, 255]
+sub = [84, 110, 122]

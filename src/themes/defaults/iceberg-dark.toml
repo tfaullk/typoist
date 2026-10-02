@@ -1,0 +1,9 @@
+name = "iceberg-dark"
+background = [22, 24, 33]
+foreground = [196, 200, 219]
+correct = [160, 210, 170]
+incorrect = [226, 120, 130]
+pending = [90, 100, 120]
+cursor = [229, 182, 116]
+accent = [132, 165, 220]
+sub = [90, 100, 120]

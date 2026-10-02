@@ -1,0 +1,9 @@
+name = "catppuccin-mocha"
+background = [30, 30, 46]
+foreground = [205, 214, 244]
+correct = [166, 227, 161]
+incorrect = [243, 139, 168]
+pending = [108, 112, 134]
+cursor = [250, 179, 135]
+accent = [137, 180, 250]
+sub = [255, 217, 209]

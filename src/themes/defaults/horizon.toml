@@ -1,0 +1,9 @@
+name = "horizon"
+background = [28, 30, 38]
+foreground = [224, 224, 232]
+correct = [41, 211, 152]
+incorrect = [236, 95, 103]
+pending = [100, 106, 128]
+cursor = [250, 180, 100]
+accent = [232, 124, 144]
+sub = [110, 106, 128]

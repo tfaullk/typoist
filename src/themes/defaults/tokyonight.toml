@@ -1,0 +1,9 @@
+name = "tokyonight"
+background = [26, 27, 38]
+foreground = [192, 202, 245]
+correct = [158, 206, 106]
+incorrect = [247, 118, 142]
+pending = [86, 95, 137]
+cursor = [224, 175, 104]
+accent = [122, 162, 247]
+sub = [255, 217, 209]

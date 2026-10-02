@@ -1,0 +1,9 @@
+name = "rose-pine"
+background = [25, 23, 36]
+foreground = [224, 222, 244]
+correct = [49, 116, 143]
+incorrect = [235, 111, 146]
+pending = [110, 106, 134]
+cursor = [246, 193, 119]
+accent = [196, 167, 231]
+sub = [255, 217, 209]

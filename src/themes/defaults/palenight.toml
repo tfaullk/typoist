@@ -1,0 +1,9 @@
+name = "palenight"
+background = [41, 44, 60]
+foreground = [166, 172, 205]
+correct = [195, 232, 141]
+incorrect = [240, 113, 120]
+pending = [103, 110, 149]
+cursor = [255, 203, 107]
+accent = [130, 170, 255]
+sub = [103, 110, 149]

@@ -1,0 +1,9 @@
+name = "ayu-dark"
+background = [10, 14, 20]
+foreground = [179, 177, 173]
+correct = [186, 230, 126]
+incorrect = [240, 113, 120]
+pending = [86, 92, 108]
+cursor = [255, 180, 84]
+accent = [89, 194, 255]
+sub = [86, 92, 108]

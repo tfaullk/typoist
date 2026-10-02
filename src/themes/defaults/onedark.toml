@@ -1,0 +1,9 @@
+name = "onedark"
+background = [40, 44, 52]
+foreground = [171, 178, 191]
+correct = [152, 195, 121]
+incorrect = [224, 108, 117]
+pending = [244, 244, 244]
+cursor = [229, 192, 123]
+accent = [97, 175, 239]
+sub = [244, 244, 244]

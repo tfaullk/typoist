@@ -1,0 +1,9 @@
+name = "gruvbox"
+background = [40, 40, 40]
+foreground = [235, 219, 178]
+correct = [184, 187, 38]
+incorrect = [251, 73, 52]
+pending = [146, 131, 116]
+cursor = [250, 189, 47]
+accent = [131, 165, 152]
+sub = [255, 217, 209]

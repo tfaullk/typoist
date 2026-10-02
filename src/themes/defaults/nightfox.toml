@@ -1,0 +1,9 @@
+name = "nightfox"
+background = [19, 26, 36]
+foreground = [205, 214, 244]
+correct = [129, 200, 190]
+incorrect = [215, 96, 126]
+pending = [87, 96, 116]
+cursor = [240, 198, 116]
+accent = [113, 156, 216]
+sub = [87, 96, 116]

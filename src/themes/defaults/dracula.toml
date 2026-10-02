@@ -1,0 +1,9 @@
+name = "dracula"
+background = [40, 42, 54]
+foreground = [248, 248, 242]
+correct = [80, 250, 123]
+incorrect = [255, 85, 85]
+pending = [98, 114, 164]
+cursor = [255, 184, 108]
+accent = [189, 147, 249]
+sub = [255, 217, 209]

@@ -1,0 +1,9 @@
+name = "cga"
+background = [0, 0, 0]
+foreground = [170, 170, 170]
+correct = [85, 255, 85]
+incorrect = [255, 85, 85]
+pending = [85, 85, 85]
+cursor = [255, 255, 85]
+accent = [85, 85, 255]
+sub = [85, 85, 85]

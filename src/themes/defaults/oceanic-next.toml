@@ -1,0 +1,9 @@
+name = "oceanic-next"
+background = [22, 27, 41]
+foreground = [200, 209, 222]
+correct = [153, 199, 148]
+incorrect = [236, 95, 103]
+pending = [78, 94, 119]
+cursor = [254, 195, 113]
+accent = [102, 153, 204]
+sub = [78, 94, 119]

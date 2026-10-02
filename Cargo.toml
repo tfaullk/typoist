@@ -1,0 +1,29 @@
+[package]
+name = "typoist"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.99"
+authors = ["tfaullk"]
+description = "A simple yet customizable TUI-based type speed/accuracy testing app. Written in rust, built on Ratatui."
+repository = "https://github.com/tfaullk/typoist"
+documentation = "https://github.com/tfaullk/typoist/blob/main/README.md"
+readme = "README.md"
+license = "LicenseRef-PolyForm-Noncommercial-1.0.0"
+keywords = ["typing", "tui", "cli", "terminal", "monkeytype", "keybr"]
+categories = ["command-line-utilities", "games"]
+
+[dependencies]
+crossterm = "0.27" ## Terminal Control Library
+ratatui = "0.26" ## Terminal User Interface Creation Library
+serde = { version = "1.0", features = ["derive"] } ## Serialization Framework (for configz)
+toml = "0.8" ## TOML Parser (for configz)
+dirs = "5.0" ## Cross-Platform Config/Data Directory Resolution
+rand = "0.8" ## Random Number Generation Library
+thiserror = "1.0" ## Custom Error Handling 
+unicode-width = "0.1" ## Unicode 
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
