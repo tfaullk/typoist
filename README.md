@@ -32,7 +32,7 @@ help screen
 
 ## Features
 
-- **Three test modes**: time (15/30/60/120s), word count (10/25/50/100), and quote
+- **Variable time modes**: time 15/30/60/120s
 - **Four word sets**: plain english, rust/code keywords, english with punctuation and capitals, code with symbols
 - **20 built-in themes**: dracula, nord, gruvbox, catppuccin, tokyonight and more, all live-previewable
 - **Custom themes**: drop a `.toml` file (see themes section for formatting) in the themes folder or import one from anywhere
@@ -72,7 +72,7 @@ typoist --theme nord --words code --mode "time 60"
 | ----------------------- | ------------------------------------------------------------------ |
 | `-t, --theme <NAME>`    | Start with a specific theme                                        |
 | `-w, --words <SET>`     | Word set: `english`, `code`, `english+punctuation`, `code+symbols` |
-| `-m, --mode <MODE>`     | Mode: `time 15|30|60|120`, `words 10|25|50|100`, or `quote`        |
+| `-m, --mode <MODE>`     | Mode: `time 15|30|60|120`                                          |
 | `--list-themes`         | List installed themes and exit                                     |
 | `--list-word-sets`      | List available word sets and exit                                  |
 | `--import-theme <FILE>` | Import a theme file into your themes directory                     |
