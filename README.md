@@ -1,6 +1,6 @@
 # typoist
 
-A terminal typing test. No browser needed. Lightweight, simple, powerful.
+A terminal typing test. No browser needed. 
 
 Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
 
