@@ -43,7 +43,7 @@ help screen
 
 ## Install
 
-Make sure you have a recent Rust toolchain (rustc 1.101.0 or higher) then:
+Make sure you have a recent Rust toolchain (rustc 1.101.0 or higher), and have cargo in your PATH then:
 
 ```sh
 git clone https://github.com/tfaullk/typoist
