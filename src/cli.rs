@@ -1,7 +1,7 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗ 
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗
 ╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝    ███║   ██╔═████╗   ██╔═████╗
    ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║       ╚██║   ██║██╔██║   ██║██╔██║
    ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║        ██║   ████╔╝██║   ████╔╝██║
@@ -49,7 +49,9 @@ impl CliArgs {
                     out.word_set = match args.next().as_deref() {
                         Some("english") => Some(WordSet::English),
                         Some("code") => Some(WordSet::Code),
-                        Some("english+punctuation") | Some("punct") => Some(WordSet::EnglishPunctuation),
+                        Some("english+punctuation") | Some("punct") => {
+                            Some(WordSet::EnglishPunctuation)
+                        }
                         Some("code+symbols") | Some("symbols") => Some(WordSet::CodeSymbols),
                         _ => None,
                     }
@@ -83,7 +85,7 @@ impl CliArgs {
                 _ => {}
             }
         }
-        
+
         // import runs before the tui opens, it's a one-shot thing
         if let Some(path) = &out.import_theme {
             if let Err(e) = themes::import_theme(path) {
@@ -107,7 +109,7 @@ impl CliArgs {
             }
 
             std::process::exit(0);
-        } 
+        }
 
         if out.list_word_sets {
             for w in WordSet::variants() {
@@ -121,15 +123,22 @@ impl CliArgs {
 
     // only the flags that were actually passed get written into settings
     pub fn apply_to(self, mut s: Settings) -> Settings {
-        if let Some(t) = self.theme { s.theme = t; }
-        if let Some(w) = self.word_set { s.word_set = w.label().to_string(); }
-        if let Some(m) = self.mode { s.mode = m.label(); }
+        if let Some(t) = self.theme {
+            s.theme = t;
+        }
+        if let Some(w) = self.word_set {
+            s.word_set = w.label().to_string();
+        }
+        if let Some(m) = self.mode {
+            s.mode = m.label();
+        }
         s
     }
 }
 
 fn print_help() {
-    println!(r#"typoist — a CLI typing test
+    println!(
+        r#"typoist — a CLI typing test
 
 USAGE:
     typoist [OPTIONS]
@@ -153,5 +162,6 @@ IN-TEST KEYS:
     a         toggle accuracy
     ?         help
     ctrl+c    quit
-"#);
+"#
+    );
 }

@@ -1,7 +1,7 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗ 
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗
 ╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝    ███║   ██╔═████╗   ██╔═████╗
    ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║       ╚██║   ██║██╔██║   ██║██╔██║
    ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║        ██║   ████╔╝██║   ████╔╝██║
@@ -32,21 +32,37 @@ pub struct Theme {
 
 // small helpers so the rest of the code doesn't hand-roll Color::Rgb everywhere
 impl Theme {
-    pub fn bg(&self) -> Color { Color::Rgb(self.background[0], self.background[1], self.background[2]) }
-    
-    pub fn fg(&self) -> Color { Color::Rgb(self.foreground[0], self.foreground[1], self.foreground[2]) }
+    pub fn bg(&self) -> Color {
+        Color::Rgb(self.background[0], self.background[1], self.background[2])
+    }
 
-    pub fn correct(&self) -> Color { Color::Rgb(self.correct[0], self.correct[1], self.correct[2]) }
+    pub fn fg(&self) -> Color {
+        Color::Rgb(self.foreground[0], self.foreground[1], self.foreground[2])
+    }
 
-    pub fn incorrect(&self) -> Color { Color::Rgb(self.incorrect[0], self.incorrect[1], self.incorrect[2]) }
+    pub fn correct(&self) -> Color {
+        Color::Rgb(self.correct[0], self.correct[1], self.correct[2])
+    }
 
-    pub fn pending(&self) -> Color { Color::Rgb(self.pending[0], self.pending[1], self.pending[2]) }
+    pub fn incorrect(&self) -> Color {
+        Color::Rgb(self.incorrect[0], self.incorrect[1], self.incorrect[2])
+    }
 
-    pub fn cursor(&self) -> Color { Color::Rgb(self.cursor[0], self.cursor[1], self.cursor[2]) }
+    pub fn pending(&self) -> Color {
+        Color::Rgb(self.pending[0], self.pending[1], self.pending[2])
+    }
 
-    pub fn accent(&self) -> Color { Color::Rgb(self.accent[0], self.accent[1], self.accent[2]) }
+    pub fn cursor(&self) -> Color {
+        Color::Rgb(self.cursor[0], self.cursor[1], self.cursor[2])
+    }
 
-    pub fn sub(&self) -> Color { Color::Rgb(self.sub[0], self.sub[1], self.sub[2]) }
+    pub fn accent(&self) -> Color {
+        Color::Rgb(self.accent[0], self.accent[1], self.accent[2])
+    }
+
+    pub fn sub(&self) -> Color {
+        Color::Rgb(self.sub[0], self.sub[1], self.sub[2])
+    }
 
     pub fn validate(&self) -> crate::error::Result<()> {
         if self.name.trim().is_empty() {

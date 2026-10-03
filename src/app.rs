@@ -1,7 +1,7 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗ 
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗
 ╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝    ███║   ██╔═████╗   ██╔═████╗
    ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║       ╚██║   ██║██╔██║   ██║██╔██║
    ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║        ██║   ████╔╝██║   ████╔╝██║
@@ -15,7 +15,7 @@ Made with ♥ by tfaullk
 
 use crate::config::Settings;
 use crate::engine::{TestMode, TestStatus, TypingTest};
-use crate::themes::{self, Theme};
+use crate::themes::{self, Theme, ThemeWarning};
 use crate::words::WordGenerator;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -34,14 +34,14 @@ pub struct App {
     pub settings: Settings,
     pub test: TypingTest,
     pub theme_index: usize,
-    pub error_message: Option<String>,
+    pub theme_warnings: Vec<ThemeWarning>,
+    pub theme_warning_index: usize,
     generator: WordGenerator,
 }
 
-impl App { 
-
+impl App {
     pub fn new(settings: Settings) -> crate::error::Result<Self> {
-        let (available_themes, theme_errors) = themes::all()?;
+        let (available_themes, theme_warnings) = themes::all()?;
 
         // fall back to the first theme if the one in settings doesn't exist
         // (renamed, deleted, whatever)
@@ -73,13 +73,14 @@ impl App {
             test,
             theme_index: 0,
             // if some theme files were broken, let the user know but don't die
-            error_message: theme_errors.first().cloned(),
+            theme_warnings,
+            theme_warning_index: 0,
             generator,
         })
     }
 
     pub fn restart_test(&mut self, new_words: bool) {
-        let count = match self.test.mode { 
+        let count = match self.test.mode {
             TestMode::Time(_) => 120,
             TestMode::Words(n) => n,
             TestMode::Quote => 30,
@@ -125,7 +126,7 @@ impl App {
         if let Some(theme) = self.themes.iter().find(|theme| theme.name == name) {
             self.theme = theme.clone();
         }
-    } 
+    }
 
     pub fn tick(&mut self) {
         self.test.tick();
@@ -133,6 +134,23 @@ impl App {
         if self.test.status == TestStatus::Finished && self.screen == Screen::Test {
             self.screen = Screen::Results;
             let _ = self.settings.save();
+        }
+    }
+
+    pub fn current_theme_warning(&self) -> Option<&ThemeWarning> {
+        self.theme_warnings.get(self.theme_warning_index)
+    }
+
+    pub fn dismiss_theme_warning(&mut self) {
+        if self.theme_warnings.is_empty() {
+            return;
+        }
+
+        self.theme_warning_index += 1;
+
+        if self.theme_warning_index >= self.theme_warnings.len() {
+            self.theme_warnings.clear();
+            self.theme_warning_index = 0;
         }
     }
 }

@@ -1,7 +1,7 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗ 
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗
 ╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝    ███║   ██╔═████╗   ██╔═████╗
    ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║       ╚██║   ██║██╔██║   ██║██╔██║
    ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║        ██║   ████╔╝██║   ████╔╝██║
@@ -13,13 +13,14 @@ Made with ♥ by tfaullk
 
 */
 
-use ratatui::Frame;
 use ratatui::layout::Alignment;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::Frame;
 
 use crate::app::{App, Screen};
+use crate::themes::ThemeWarning;
 use crate::ui::{layout, widgets};
 
 pub fn draw(f: &mut Frame, app: &App) {
@@ -35,9 +36,9 @@ pub fn draw(f: &mut Frame, app: &App) {
         Screen::Help => draw_help(f, app),
     }
     // error popup sits on top of whatever screen is showing
-    if let Some(message) = &app.error_message {
-        draw_error_popup(f, app, message);
-    }
+    if let Some(warning) = app.current_theme_warning() {
+        draw_theme_warning_popup(f, app, warning);
+    } 
 }
 
 fn draw_test(f: &mut Frame, app: &App) {
@@ -46,17 +47,26 @@ fn draw_test(f: &mut Frame, app: &App) {
 
     // header: app name, mode, word set
     let header = Paragraph::new(Line::from(vec![
-        Span::styled("typoist", Style::default().fg(theme.accent()).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "typoist",
+            Style::default()
+                .fg(theme.accent())
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::raw("  "),
         Span::styled(app.test.mode.label(), Style::default().fg(theme.sub())),
         Span::raw("  "),
         Span::styled(
-        app.settings.word_set().label().to_string(),
-        Style::default().fg(theme.sub()),
-    ),
+            app.settings.word_set().label().to_string(),
+            Style::default().fg(theme.sub()),
+        ),
     ]))
     .style(Style::default().bg(theme.bg()).fg(theme.fg()))
-    .block(Block::default().borders(Borders::BOTTOM).border_style(Style::default().fg(theme.sub())));
+    .block(
+        Block::default()
+            .borders(Borders::BOTTOM)
+            .border_style(Style::default().fg(theme.sub())),
+    );
     f.render_widget(header, areas.header);
 
     let lines = widgets::build_test_lines(&app.test, theme);
@@ -69,7 +79,10 @@ fn draw_test(f: &mut Frame, app: &App) {
 
     // footer: live stats plus a compact cheat sheet
     let stats_line = Line::from(widgets::stat_spans(
-        &app.test, theme, app.settings.show_live_wpm, app.settings.show_accuracy,
+        &app.test,
+        theme,
+        app.settings.show_live_wpm,
+        app.settings.show_accuracy,
     ));
     let hint = Line::from(vec![
         Span::styled("tab", Style::default().fg(theme.accent())),
@@ -108,7 +121,7 @@ fn draw_results(f: &mut Frame, app: &App) {
         Line::from(format!("WPM: {:.1}", stats.wpm())),
         Line::from(format!("Raw WPM: {:.1}", stats.raw_wpm())),
         Line::from(format!("Accuracy: {:.1}%", stats.accuracy())),
-        Line::from(format!("Consistency: {:.1}%", stats.consistency())), 
+        Line::from(format!("Consistency: {:.1}%", stats.consistency())),
         Line::from(""),
         Line::from(Span::styled(
             "Press Tab to restart • Esc to return",
@@ -146,7 +159,9 @@ fn draw_theme_picker(f: &mut Frame, app: &App) {
         let selected = i == app.theme_index;
         let name = &theme_item.name;
         let style = if selected {
-            Style::default().fg(theme.accent()).add_modifier(Modifier::BOLD | Modifier::REVERSED)
+            Style::default()
+                .fg(theme.accent())
+                .add_modifier(Modifier::BOLD | Modifier::REVERSED)
         } else {
             Style::default().fg(theme.fg())
         };
@@ -155,10 +170,12 @@ fn draw_theme_picker(f: &mut Frame, app: &App) {
 
     let p = Paragraph::new(lines)
         .style(Style::default().bg(theme.bg()).fg(theme.fg()))
-        .block(Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(theme.accent()))
-            .title(" themes "));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(theme.accent()))
+                .title(" themes "),
+        );
     f.render_widget(ratatui::widgets::Clear, centered_rect(60, 60, f.size()));
     f.render_widget(p, centered_rect(60, 60, f.size()));
 }
@@ -168,7 +185,9 @@ fn draw_help(f: &mut Frame, app: &App) {
     let lines = vec![
         Line::from(Span::styled(
             "typoist — help",
-            Style::default().fg(theme.accent()).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(theme.accent())
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
         Line::from("  tab       restart test (new words)"),
@@ -188,9 +207,11 @@ fn draw_help(f: &mut Frame, app: &App) {
     ];
     let p = Paragraph::new(lines)
         .style(Style::default().bg(theme.bg()).fg(theme.fg()))
-        .block(Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(theme.accent())));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(theme.accent())),
+        );
     f.render_widget(ratatui::widgets::Clear, centered_rect(60, 60, f.size()));
     f.render_widget(p, centered_rect(60, 60, f.size()));
 }
@@ -215,24 +236,71 @@ fn centered_rect(px: u16, py: u16, r: ratatui::layout::Rect) -> ratatui::layout:
         .split(vertical[1])[1]
 }
 
-fn draw_error_popup(f: &mut Frame, app: &App, message: &str) {
+fn draw_theme_warning_popup(f: &mut Frame, app: &App, warning: &ThemeWarning) {
     let theme = &app.theme;
+    let warning_count = app.theme_warnings.len();
+    let warning_number = app.theme_warning_index + 1;
 
-    let lines = vec![
+    let mut lines = vec![
         Line::from(Span::styled(
-            "Error",
+            &warning.title,
             Style::default()
                 .fg(theme.incorrect())
                 .add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
-        Line::from(message),
-        Line::from(""),
-        Line::from(Span::styled(
-            "Press Enter or Esc to close",
-            Style::default().fg(theme.sub()),
-        )),
     ];
+
+    for line in warning.message.lines() {
+        lines.push(Line::from(line.to_string()));
+    }
+
+    if let Some(path) = &warning.path {
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled(
+            "File:",
+            Style::default()
+                .fg(theme.accent())
+                .add_modifier(Modifier::BOLD),
+        )));
+        lines.push(Line::from(path.clone()));
+    }
+
+    if let Some(details) = &warning.details {
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled(
+            "Technical details:",
+            Style::default().fg(theme.sub()),
+        )));
+        lines.push(Line::from(Span::styled(
+            details.clone(),
+            Style::default().fg(theme.sub()),
+        )));
+    }
+
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "Your other themes are still available",
+        Style::default().fg(theme.sub()),
+    )));
+    lines.push(Line::from(""));
+
+    let dismiss_hint = if warning_count > 1 {
+        format!(
+            "Press Enter, Esc, Space, ↓, or → for next warning ({}/{})",
+            warning_number,
+            warning_count
+        )
+    } else {
+        String::from("Press Enter, Esc, Space, ↓, or → to continue")
+    };
+
+    lines.push(Line::from(Span::styled(
+        dismiss_hint,
+        Style::default()
+            .fg(theme.accent())
+            .add_modifier(Modifier::BOLD),
+    )));
 
     let popup = Paragraph::new(lines)
         .style(Style::default().bg(theme.bg()).fg(theme.fg()))
@@ -241,10 +309,10 @@ fn draw_error_popup(f: &mut Frame, app: &App, message: &str) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(theme.incorrect()))
-                .title(" theme error "),
+                .title(" theme warning "),
         );
 
-    let area = centered_rect(70, 40, f.size());
+    let area = centered_rect(78, 65, f.size());
 
     f.render_widget(ratatui::widgets::Clear, area);
     f.render_widget(popup, area);

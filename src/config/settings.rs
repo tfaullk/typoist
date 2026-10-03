@@ -1,7 +1,7 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗ 
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗
 ╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝    ███║   ██╔═████╗   ██╔═████╗
    ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║       ╚██║   ██║██╔██║   ██║██╔██║
    ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║        ██║   ████╔╝██║   ████╔╝██║
@@ -13,13 +13,13 @@ Made with ♥ by tfaullk
 
 */
 
+use super::paths;
+use crate::engine::TestMode;
+use crate::error::Result;
+use crate::words::WordSet;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
-use crate::error::Result;
-use crate::words::WordSet;
-use crate::engine::TestMode;
-use super::paths;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {

@@ -1,7 +1,7 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗ 
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗
 ╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝    ███║   ██╔═████╗   ██╔═████╗
    ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║       ╚██║   ██║██╔██║   ██║██╔██║
    ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║        ██║   ████╔╝██║   ████╔╝██║
@@ -13,12 +13,12 @@ Made with ♥ by tfaullk
 
 */
 
-use std::time::{Duration, Instant};
 use super::stats::Stats;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TestMode {
-    Time(u64),      
+    Time(u64),
     Words(usize),
     Quote,
 }
@@ -58,7 +58,7 @@ pub enum TestStatus {
 pub struct TypingTest {
     pub words: Vec<String>,
     pub typed: Vec<TypedChar>,
-    pub cursor: usize,           
+    pub cursor: usize,
     pub status: TestStatus,
     pub mode: TestMode,
     pub stats: Stats,
@@ -70,7 +70,8 @@ pub struct TypingTest {
 impl TypingTest {
     pub fn new(words: Vec<String>, mode: TestMode) -> Self {
         // one slot per char plus the spaces between words
-        let total_chars: usize = words.iter().map(|w| w.len()).sum::<usize>() + words.len().saturating_sub(1);
+        let total_chars: usize =
+            words.iter().map(|w| w.len()).sum::<usize>() + words.len().saturating_sub(1);
         Self {
             words,
             typed: Vec::with_capacity(total_chars),
@@ -88,8 +89,12 @@ impl TypingTest {
     pub fn target_chars(&self) -> Vec<char> {
         let mut out = Vec::new();
         for (i, w) in self.words.iter().enumerate() {
-            for c in w.chars() { out.push(c); }
-            if i != self.words.len() - 1 { out.push(' '); }
+            for c in w.chars() {
+                out.push(c);
+            }
+            if i != self.words.len() - 1 {
+                out.push(' ');
+            }
         }
         out
     }
@@ -105,7 +110,9 @@ impl TypingTest {
     }
 
     pub fn push_char(&mut self, c: char) {
-        if self.status == TestStatus::Finished { return; }
+        if self.status == TestStatus::Finished {
+            return;
+        }
         self.start();
 
         let target = self.target_chars();
@@ -126,7 +133,7 @@ impl TypingTest {
             CharState::Correct => self.stats.correct_keystrokes += 1,
             CharState::Incorrect | CharState::Extra => self.stats.incorrect_keystrokes += 1,
             CharState::Pending => {}
-        } 
+        }
         self.sample_if_due();
 
         if self.cursor >= target.len() && self.all_words_complete(&target) {
@@ -140,7 +147,9 @@ impl TypingTest {
 
     // note: this doesn't undo the mistake in the stats, it's display-only
     pub fn backspace(&mut self) {
-        if self.status != TestStatus::Running || self.typed.is_empty() { return; }
+        if self.status != TestStatus::Running || self.typed.is_empty() {
+            return;
+        }
         self.typed.pop();
         self.cursor = self.cursor.saturating_sub(1);
     }
@@ -148,8 +157,12 @@ impl TypingTest {
     // called from the main loop's tick, mostly to keep elapsed time fresh
     // and end timed tests
     pub fn tick(&mut self) {
-        if self.status != TestStatus::Running { return; }
-        let Some(started) = self.started_at else { return };
+        if self.status != TestStatus::Running {
+            return;
+        }
+        let Some(started) = self.started_at else {
+            return;
+        };
         self.stats.elapsed = started.elapsed();
         self.sample_if_due();
 
@@ -162,10 +175,14 @@ impl TypingTest {
 
     // grab a wpm sample once a second, that's what consistency is built from
     fn sample_if_due(&mut self) {
-        let Some(started) = self.started_at else { return };
+        let Some(started) = self.started_at else {
+            return;
+        };
         let now = Instant::now();
         self.stats.elapsed = now.duration_since(started);
-        let Some(last) = self.last_sample_at else { return };
+        let Some(last) = self.last_sample_at else {
+            return;
+        };
         if now.duration_since(last) >= Duration::from_secs(1) {
             let wpm = self.stats.wpm();
             self.stats.push_wpm_sample(wpm);
@@ -175,7 +192,9 @@ impl TypingTest {
     }
 
     pub fn finish(&mut self) {
-        if self.status == TestStatus::Finished { return; }
+        if self.status == TestStatus::Finished {
+            return;
+        }
         if let Some(started) = self.started_at {
             self.stats.elapsed = started.elapsed();
         }
@@ -183,7 +202,9 @@ impl TypingTest {
     }
 
     pub fn reset(&mut self, new_words: Option<Vec<String>>) {
-        if let Some(w) = new_words { self.words = w; }
+        if let Some(w) = new_words {
+            self.words = w;
+        }
         // keep the old capacity around, saves a realloc
         let cap = self.typed.capacity();
         self.typed = Vec::with_capacity(cap);

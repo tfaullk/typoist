@@ -1,7 +1,7 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗ 
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗
 ╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝    ███║   ██╔═████╗   ██╔═████╗
    ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║       ╚██║   ██║██╔██║   ██║██╔██║
    ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║        ██║   ████╔╝██║   ████╔╝██║
@@ -13,8 +13,8 @@ Made with ♥ by tfaullk
 
 */
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::app::{App, Screen};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 pub enum InputAction {
     Quit,
@@ -23,10 +23,10 @@ pub enum InputAction {
 
 pub fn handle_key(app: &mut App, key: KeyEvent) -> InputAction {
     // error popup swallows everything until it's dismissed
-    if app.error_message.is_some() {
+    if app.current_theme_warning().is_some() {
         match key.code {
-            KeyCode::Enter | KeyCode::Esc => {
-                app.error_message = None;
+            KeyCode::Enter | KeyCode::Esc | KeyCode::Char(' ') | KeyCode::Right | KeyCode::Down => {
+                app.dismiss_theme_warning();
             }
             _ => {}
         }

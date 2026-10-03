@@ -1,7 +1,7 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗ 
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗     ██╗    ██████╗     ██████╗
 ╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝    ███║   ██╔═████╗   ██╔═████╗
    ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║       ╚██║   ██║██╔██║   ██║██╔██║
    ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║        ██║   ████╔╝██║   ████╔╝██║
@@ -13,21 +13,26 @@ Made with ♥ by tfaullk
 
 */
 
+use super::wordlists::*;
 use rand::seq::SliceRandom;
 use rand::Rng;
-use super::wordlists::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WordSet {
     English,
-    Code, 
+    Code,
     EnglishPunctuation,
     CodeSymbols,
 }
 
 impl WordSet {
     pub fn variants() -> &'static [WordSet] {
-        &[WordSet::English, WordSet::Code, WordSet::EnglishPunctuation, WordSet::CodeSymbols]
+        &[
+            WordSet::English,
+            WordSet::Code,
+            WordSet::EnglishPunctuation,
+            WordSet::CodeSymbols,
+        ]
     }
 
     // these strings double as the names in settings.toml, keep them stable
@@ -57,7 +62,10 @@ pub struct WordGenerator {
 
 impl WordGenerator {
     pub fn new(set: WordSet) -> Self {
-        Self { set, rng: rand::thread_rng() }
+        Self {
+            set,
+            rng: rand::thread_rng(),
+        }
     }
 
     // english variants share the english list, code variants share the code one
@@ -70,7 +78,7 @@ impl WordGenerator {
 
     pub fn generate(&mut self, count: usize) -> Vec<String> {
         let base = self.base_words();
-        let mut words: Vec<String> = {0..count}
+        let mut words: Vec<String> = { 0..count }
             .map(|_| base.choose(&mut self.rng).unwrap().to_string())
             .collect();
 
