@@ -4,7 +4,7 @@ A terminal typing practice application. No browser needed.
 
 Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
 
-***Disclaimer***: On release 1.0.0, only the words mode works despite some of the code and help menus mentioning
+***Disclaimer***: On early releases, only the words mode works despite some of the code and help menus mentioning
 later planned modes that i have not released yet
 
 
