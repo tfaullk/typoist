@@ -4,7 +4,7 @@ A terminal typing practice application. No browser needed.
 
 Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
 
-***Disclaimer***: On early releases, only the words mode works despite some of the code and help menus mentioning
+***Disclaimer***: On release 1.0.0, only the words mode works despite some of the code and help menus mentioning
 later planned modes that i have not released yet
 
 
@@ -38,6 +38,7 @@ help screen
 - **Four word sets**: plain english, rust/code keywords, english with punctuation and capitals, code with symbols
 - **20 built-in themes**: dracula, nord, gruvbox, catppuccin, tokyonight and more, all live-previewable
 - **Custom themes**: drop a `.toml` file (see themes section for formatting) in the themes folder or import one from anywhere
+- **Custom Wordlists**: drop a `.txt` file in the wordlists folder or import one from anywhere
 - **Live stats**: wpm, accuracy, and a consistency score based on your per-second wpm samples
 - **Persisted settings**: your theme, mode, and word set are saved between runs
 

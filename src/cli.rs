@@ -1,10 +1,10 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░███╗░░░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░████║░░░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔██║░░░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░╚═╝██║░░░░░██║░░██║
+████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░██████╗░░░░░█████╗░
+╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░╚════██╗░░░██╔══██╗
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░░░███╔═╝░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░██╔══╝░░░░░██║░░██║
 ░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗███████╗██╗╚█████╔╝
 ░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝╚══════╝╚═╝░╚════╝░
 
@@ -46,15 +46,9 @@ impl CliArgs {
             match a.as_str() {
                 "--theme" | "-t" => out.theme = args.next(),
                 "--words" | "-w" => {
-                    out.word_set = match args.next().as_deref() {
-                        Some("english") => Some(WordSet::English),
-                        Some("code") => Some(WordSet::Code),
-                        Some("english+punctuation") | Some("punct") => {
-                            Some(WordSet::EnglishPunctuation)
-                        }
-                        Some("code+symbols") | Some("symbols") => Some(WordSet::CodeSymbols),
-                        _ => None,
-                    }
+                    out.word_set = args
+                        .next()
+                        .and_then(|s| WordSet::from_label(&s));
                 }
                 "--mode" | "-m" => {
                     // accept "time 30", "words 25", "time30", or just "30"
@@ -112,12 +106,27 @@ impl CliArgs {
         }
 
         if out.list_word_sets {
-            for w in WordSet::variants() {
-                println!("{}", w.label());
+            println!("Built-in:");
+            for w in WordSet::builtins() {
+                println!("  {}", w.label());
+            }
+            match crate::words::custom::names() {
+                Ok(names) if !names.is_empty() => {
+                    println!("\nCustom ({}):", crate::config::paths::wordlists_dir().display());
+                    for name in names {
+                        println!("  custom:{}", name);
+                    }
+                }
+                Ok(_) => {
+                    println!(
+                        "\nNo custom wordlists. Drop .txt files (one word per line) into:\n  {}",
+                        crate::config::paths::wordlists_dir().display()
+                    );
+                }
+                Err(e) => eprintln!("(failed to scan wordlists: {})", e),
             }
             std::process::exit(0);
         }
-
         out
     }
 
