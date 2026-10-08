@@ -1,0 +1,45 @@
+# rust keywords and common identifiers
+fn
+let
+mut
+impl
+trait
+struct
+enum
+match
+pub
+crate
+use
+mod
+self
+Self
+super
+async
+await
+dyn
+Box<T>
+Vec<T>
+Option<T>
+Result<T, E>
+Some
+None
+Ok
+Err
+unwrap
+unwrap_or
+map
+and_then
+iter
+into_iter
+collect
+for_each
+borrow
+borrow_mut
+clone # this comment should be stripped
+String
+&str
+usize
+u8
+u64
+i32
+f64
