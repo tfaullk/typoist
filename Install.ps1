@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$InstallDir = "$env:USERPROFILE\bin",
-    [string]$Repo       = "tfaullk/typoist-update-test",
+    [string]$Repo       = "tfaullk/typoist",
     [string]$Target     = "x86_64-pc-windows-msvc.exe"
 )
 
