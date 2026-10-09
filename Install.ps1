@@ -38,7 +38,7 @@ switch ($arch) {
 }
 
 $assetName = "typoist-$Target.exe"
-$url = "https://github.com/tfaullk/typoist-update-test/releases/download/v1.3.2/typoist-1.3.2-x86_64-pc-windows-msvc.exe"
+$url = "https://github.com/tfaullk/typoist/releases/download/v1.3.0/typoist-1.3.0-x86_64-pc-windows-msvc.exe"
 
 Write-Host ""
 Write-Step "typoist installer"
