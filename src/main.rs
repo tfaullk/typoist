@@ -1,12 +1,13 @@
 /*
 
 
+
 ████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░██████╗░░░░░█████╗░
 ╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░╚════██╗░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░░░███╔═╝░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░██╔══╝░░░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗███████╗██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝╚══════╝╚═╝░╚════╝░
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░░█████╔╝░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░░╚═══██╗░░░██║░░██║
+░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗██████╔╝██╗╚█████╔╝
+░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝╚═════╝░╚═╝░╚════╝░
 
 Made with ♥ by tfaullk
 
@@ -21,6 +22,7 @@ mod error;
 mod input;
 mod themes;
 mod ui;
+mod update;
 mod words;
 
 use std::io;
@@ -45,6 +47,14 @@ fn main() -> Result<()> {
     let args = CliArgs::parse();
     let settings = args.apply_to(Settings::load());
 
+    update::cleanup_previous_update();
+    
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = disable_raw_mode();
+        let _ = execute!(io::stdout(), LeaveAlternateScreen);
+        original_hook(info);
+    }));
     // take over the terminal before doing anything else
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -53,11 +63,10 @@ fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     let res = run(&mut terminal, settings);
-
-    // always give the terminal back, even if things blew up
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
+    
+    let _ = disable_raw_mode();
+    let _ = execute!(terminal.backend_mut(), LeaveAlternateScreen);
+    let _ = terminal.show_cursor();
 
     if let Err(e) = res {
         eprintln!("error: {}", e);
@@ -81,14 +90,15 @@ fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, settings: Setti
             .unwrap_or_else(|| Duration::from_secs(0));
 
         if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                // some terminals fire press + release, we only care about presses
-                if key.kind == KeyEventKind::Press {
+            match event::read() {
+                Ok(Event::Key(key)) if key.kind == KeyEventKind::Press => {
                     match input::handle_key(&mut app, key) {
                         InputAction::Quit => app.should_quit = true,
                         InputAction::None => {}
                     }
                 }
+                Ok(_) => {}
+                Err(_) => {}
             }
         }
 
@@ -101,5 +111,8 @@ fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, settings: Setti
             break;
         }
     }
+
+    let _ = app.settings.save();
+
     Ok(())
 }

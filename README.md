@@ -1,36 +1,22 @@
 # typoist
-
-A terminal typing practice application. No browser needed. 
-
+A terminal typing practice application.  
 Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
-
-***Disclaimer***: On early releases, only the words mode works despite some of the code and help menus mentioning
-later planned modes that i have not released yet
-
 
 typoist in action
 
-
 <img src="imgs/TypoistInAction.png" width="750">
-
 
 results
 
-
 <img src="imgs/TypoistResults.png" width="750">
-
 
 theme menu    
 
-
 <img src="imgs/TypoistThemeMenu.png" width="750">
-
 
 help screen
 
-
 <img src="imgs/TypoistHelpMenu.png" width="750">
-
 
 ## Features
 
@@ -41,15 +27,42 @@ help screen
 - **Custom Wordlists**: drop a `.txt` file in the wordlists folder or import one from anywhere
 - **Live stats**: wpm, accuracy, and a consistency score based on your per-second wpm samples
 - **Persisted settings**: your theme, mode, and word set are saved between runs
+- **Simple updates**: typoist --update and typoist --check-update are useful tools built-in to keep you up to date
 
-## Install
+## Install (Windows)
+
+Use the install.ps1 script.
+Open a powershell window and type
+``` cd Downloads ```
+``` powershell -ExecutionPolicy Bypass -File .\Install.ps1 ```
+
+Then, run ``` typoist ``` from a cmd or powershell.
+
+## Install (Linux)
 
 Make sure you have a recent Rust toolchain (rustc 1.101.0 or higher), and have cargo in your PATH then:
 
 ```sh
-git clone https://github.com/tfaullk/typoist
-cd typoist
-cargo install --path .
+mkdir -p ~/.local/bin
+curl -fL https://github.com/tfaullk/typoist-update-test/releases/download/v1.3.2/typoist-1.3.2-x86_64-unknown-linux-musl -o ~/.local/bin/typoist
+chmod +x ~/.local/bin/typoist
+```
+
+Add `~/.local/bin` to PATH if it isnt there.
+**Bash / Zsh:**
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc   # or ~/.zshrc
+source ~/.bashrc
+```
+
+```zsh
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+```fish
+fish_add_path ~/.local/bin
 ```
 
 Then just run `typoist` from anywhere.
@@ -81,6 +94,9 @@ typoist --theme nord --words code --mode "time 60"
 | `--import-theme <FILE>` | Import a theme file into your themes directory                     |
 | `--no-save`             | Don't persist settings for this session                            |
 | `-h, --help`            | Show help                                                          |
+| `-v, --version`         | Show current version                                               |
+| `--update`              | Update to latest version                                           |
+| `--check-update`        | Check for updates                                                  |
 
 
 ## Keybinds

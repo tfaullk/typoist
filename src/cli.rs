@@ -1,12 +1,13 @@
 /*
 
 
+
 ████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░██████╗░░░░░█████╗░
 ╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░╚════██╗░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░░░███╔═╝░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░██╔══╝░░░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗███████╗██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝╚══════╝╚═╝░╚════╝░
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░░█████╔╝░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░░╚═══██╗░░░██║░░██║
+░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗██████╔╝██╗╚█████╔╝
+░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝╚═════╝░╚═╝░╚════╝░
 
 Made with ♥ by tfaullk
 
@@ -27,11 +28,17 @@ pub struct CliArgs {
     pub list_word_sets: bool,
     pub no_save: bool,
     pub import_theme: Option<PathBuf>,
+    pub update: bool,
+    pub check_update: bool,
 }
 
 impl CliArgs {
     pub fn parse() -> Self {
-        let mut args = std::env::args().skip(1).peekable();
+        let mut args = std::env::args_os()
+            .skip(1)
+            .map(|s| s.to_string_lossy().into_owned())
+            .peekable();
+
         let mut out = Self {
             theme: None,
             word_set: None,
@@ -40,6 +47,8 @@ impl CliArgs {
             list_themes: false,
             list_word_sets: false,
             no_save: false,
+            update: false,
+            check_update: false,
         };
 
         while let Some(a) = args.next() {
@@ -76,6 +85,12 @@ impl CliArgs {
                     print_help();
                     std::process::exit(0);
                 }
+                "--update" => out.update = true,
+                "--check-update" => out.check_update = true,
+                "--version" | "-v" => {
+                    println!("typoist {}", env!("CARGO_PKG_VERSION"));
+                    std::process::exit(0);
+                }
                 _ => {}
             }
         }
@@ -85,6 +100,30 @@ impl CliArgs {
             if let Err(e) = themes::import_theme(path) {
                 eprintln!("typoist: failed to import theme: {}", e);
                 std::process::exit(1);
+            }
+        }
+
+        if out.update || out.check_update {
+            match crate::update::run_update(out.check_update) {
+                Ok(Some(outcome)) => {
+                    // Distinct branch for "an update actually happened".
+                    // For now, we just confirm and exit; if you later want
+                    // to write to a log file or set a non-zero exit code
+                    // for "was updated", this is the place.
+                    eprintln!(
+                        "typoist: updated {} -> {}",
+                        outcome.from, outcome.to
+                    );
+                    std::process::exit(0);
+                }
+                Ok(None) => {
+                    // No update needed, message already printed by run_update.
+                    std::process::exit(0);
+                }
+                Err(e) => {
+                    eprintln!("typoist: update failed: {}", e);
+                    std::process::exit(1);
+                }
             }
         }
 
@@ -160,6 +199,9 @@ OPTIONS:
         --list-word-sets      List available word sets and exit
         --no-save             Don't persist settings this session
     -h, --help                Show this help
+    -v, --version             Lists the version currently running
+    --update                  Uses update cli interface to update 
+    --check-update            Checks for updates
 
 IN-TEST KEYS:
     tab       new test

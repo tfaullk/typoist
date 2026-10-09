@@ -1,12 +1,13 @@
 /*
 
 
+
 ████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░██████╗░░░░░█████╗░
 ╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░╚════██╗░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░░░███╔═╝░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░██╔══╝░░░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗███████╗██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝╚══════╝╚═╝░╚════╝░
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░░█████╔╝░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░░╚═══██╗░░░██║░░██║
+░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗██████╔╝██╗╚█████╔╝
+░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝╚═════╝░╚═╝░╚════╝░
 
 Made with ♥ by tfaullk
 
@@ -34,12 +35,14 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> InputAction {
         return InputAction::None;
     }
 
-    if key.modifiers.contains(KeyModifiers::CONTROL)
-        && matches!(key.code, KeyCode::Char('q') | KeyCode::Char('c'))
-    {
+    let mods = key.modifiers;
+    let only_ctrl = mods.contains(KeyModifiers::CONTROL)
+        && !mods.contains(KeyModifiers::ALT)
+        && !mods.contains(KeyModifiers::SHIFT);
+    if only_ctrl && matches!(key.code, KeyCode::Char('q') | KeyCode::Char('c')) {
         return InputAction::Quit;
     }
-
+    
     match app.screen {
         Screen::Test => handle_test(app, key),
         Screen::Results => handle_results(app, key),
@@ -54,7 +57,9 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> InputAction {
 }
 
 fn handle_test(app: &mut App, key: KeyEvent) {
-    let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
+    let mods = key.modifiers;
+    let ctrl = mods.contains(KeyModifiers::CONTROL)
+        && !mods.contains(KeyModifiers::ALT);
 
     match key.code {
         // esc means "back" — mid-test it restarts with the same words, otherwise quit
@@ -103,7 +108,10 @@ fn handle_test(app: &mut App, key: KeyEvent) {
 }
 
 fn handle_results(app: &mut App, key: KeyEvent) {
-    let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
+    let mods = key.modifiers;
+    let ctrl = mods.contains(KeyModifiers::CONTROL)
+        && !mods.contains(KeyModifiers::ALT);
+
     match key.code {
         KeyCode::Tab => {
             app.restart_test(true);
@@ -121,7 +129,10 @@ fn handle_results(app: &mut App, key: KeyEvent) {
 }
 
 fn handle_theme_picker(app: &mut App, key: KeyEvent) {
-    let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
+    let mods = key.modifiers;
+    let ctrl = mods.contains(KeyModifiers::CONTROL)
+        && !mods.contains(KeyModifiers::ALT);
+
     let theme_count = app.themes.len();
 
     if theme_count == 0 {
