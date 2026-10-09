@@ -33,7 +33,8 @@ help screen
 
 Use the install.ps1 script.
 Open a powershell window and type
-``` cd Downloads ```
+``` cd Downloads ``` 
+
 ``` powershell -ExecutionPolicy Bypass -File .\Install.ps1 ```
 
 Then, run ``` typoist ``` from a cmd or powershell.
