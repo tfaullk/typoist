@@ -1,16 +1,14 @@
 /*
 
 
-
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░██████╗░░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░╚════██╗░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░░█████╔╝░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░░╚═══██╗░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗██████╔╝██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝╚═════╝░╚═╝░╚════╝░
+████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
+╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
+░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
+░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
 
 Made with ♥ by tfaullk
-
 
 */
 
@@ -99,4 +97,50 @@ pub fn stat_spans(
         Style::default().fg(theme.sub()),
     ));
     spans
+}
+
+pub fn build_wpm_graph(test: &TypingTest, theme: &Theme, width: usize) -> Vec<Line<'static>>
+{
+    let samples = &test.stats.wpm_samples;
+
+    if samples.is_empty() {
+        return vec![Line::from(Span::styled(
+            "wpm graph: waiting for data...",
+            Style::default().fg(theme.sub()),
+        ))];
+    }
+
+    const BLOCKS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+    let max = samples.iter().cloned().fold(0.0_f64, f64::max).max(1.0);
+    let min = samples.iter().cloned().fold(f64::MAX, f64::min);
+    let range = (max - min).max(1.0);
+
+    let start = samples.len().saturating_sub(width);
+    let visible = &samples[start..];
+
+    let mut graph_spans = Vec::with_capacity(visible.len());
+    for &s in visible {
+        let normalized = (s - min) / range;
+        let idx = ((normalized * (BLOCKS.len() - 1) as f64).round() as usize)
+            .min(BLOCKS.len() - 1);
+        graph_spans.push(Span::styled(
+            BLOCKS[idx].to_string(),
+            Style::default().fg(theme.accent()),
+        ));
+    }
+
+    let label = format!(
+        "wpm {:.0}-{:.0}  ",
+        min,
+        max
+    );
+
+    vec![
+        Line::from(vec![
+            Span::styled(label, Style::default().fg(theme.sub())),
+            Span::raw(""),
+        ]),
+        Line::from(graph_spans),
+    ]
 }

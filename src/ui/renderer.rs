@@ -1,16 +1,14 @@
 /*
 
 
-
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░██████╗░░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░╚════██╗░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░░█████╔╝░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░░╚═══██╗░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗██████╔╝██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝╚═════╝░╚═╝░╚════╝░
+████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
+╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
+░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
+░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
 
 Made with ♥ by tfaullk
-
 
 */
 
@@ -50,7 +48,7 @@ fn draw_test(f: &mut Frame, app: &App) {
     // header: app name, mode, word set
     let header = Paragraph::new(Line::from(vec![
         Span::styled(
-            "typoist 1.3.0",
+            "typoist 1.4.0",
             Style::default()
                 .fg(theme.accent())
                 .add_modifier(Modifier::BOLD),
@@ -71,13 +69,43 @@ fn draw_test(f: &mut Frame, app: &App) {
     );
     f.render_widget(header, areas.header);
 
+    // if the wpm graph is on, split the body vertically so the graph
+    // sits above the text
+    let (graph_area, text_area) = if app.settings.show_wpm_graph {
+        let chunks = ratatui::layout::Layout::default()
+            .direction(ratatui::layout::Direction::Vertical)
+            .constraints([
+                ratatui::layout::Constraint::Length(3),
+                ratatui::layout::Constraint::Min(1),
+            ])
+            .split(areas.body);
+        (Some(chunks[0]), chunks[1])
+    } else {
+        (None, areas.body)
+    };
+
+    // FIX: bind the area to a local before rendering so we can read its width,
+    // then use that local for both the widget call and the width calc
+    if let Some(graph_rect) = graph_area {
+        let graph_width = graph_rect.width.saturating_sub(2) as usize;
+        let graph_lines = widgets::build_wpm_graph(&app.test, theme, graph_width);
+        let graph = Paragraph::new(graph_lines)
+            .style(Style::default().bg(theme.bg()).fg(theme.fg()))
+            .block(
+                Block::default()
+                    .borders(Borders::BOTTOM)
+                    .border_style(Style::default().fg(theme.sub())),
+            );
+        f.render_widget(graph, graph_rect);
+    }
+
     let lines = widgets::build_test_lines(&app.test, theme);
     let body = Paragraph::new(lines)
         .style(Style::default().bg(theme.bg()).fg(theme.fg()))
         .wrap(Wrap { trim: false })
         .alignment(Alignment::Left)
         .block(Block::default().padding(ratatui::widgets::Padding::new(4, 4, 2, 2)));
-    f.render_widget(body, areas.body);
+    f.render_widget(body, text_area);
 
     // footer: live stats plus a compact cheat sheet
     let stats_line = Line::from(widgets::stat_spans(
@@ -97,6 +125,8 @@ fn draw_test(f: &mut Frame, app: &App) {
         Span::styled(" words   ", Style::default().fg(theme.sub())),
         Span::styled("ctrl+n", Style::default().fg(theme.accent())),
         Span::styled(" mode   ", Style::default().fg(theme.sub())),
+        Span::styled("ctrl+g", Style::default().fg(theme.accent())),
+        Span::styled(" graph   ", Style::default().fg(theme.sub())),
         Span::styled("esc, ctrl+c, ctrl+q", Style::default().fg(theme.accent())),
         Span::styled(" quit", Style::default().fg(theme.sub())),
     ]);
@@ -200,6 +230,7 @@ fn draw_help(f: &mut Frame, app: &App) {
         Line::from("  ctrl+n    cycle mode"),
         Line::from("  ctrl+l    toggle live WPM"),
         Line::from("  ctrl+a    toggle accuracy display"),
+        Line::from("  ctrl+g    toggle live WPM graph"),
         Line::from("  ctrl+h    this help  (or F1)"),
         Line::from(""),
         Line::from(Span::styled(
