@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
+╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
+   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
+   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
+   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
+   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
 
 Made with ♥ by tfaullk
 
@@ -22,6 +22,7 @@ use ratatui::Frame;
 use crate::app::{App, Screen};
 use crate::themes::ThemeWarning;
 use crate::ui::{layout, widgets};
+use crate::ui::screens;
 
 pub fn draw(f: &mut Frame, app: &App) {
     let theme = &app.theme;
@@ -30,10 +31,12 @@ pub fn draw(f: &mut Frame, app: &App) {
     f.render_widget(Block::default().style(bg), f.size());
 
     match app.screen {
+        Screen::Menu => screens::menu::draw(f, app),
         Screen::Test => draw_test(f, app),
         Screen::Results => draw_results(f, app),
         Screen::ThemePicker => draw_theme_picker(f, app),
         Screen::Help => draw_help(f, app),
+        Screen::Update => screens::update::draw(f, app),
     }
     // error popup sits on top of whatever screen is showing
     if let Some(warning) = app.current_theme_warning() {
@@ -48,7 +51,7 @@ fn draw_test(f: &mut Frame, app: &App) {
     // header: app name, mode, word set
     let header = Paragraph::new(Line::from(vec![
         Span::styled(
-            "typoist 1.4.0",
+            format!("typoist {}", env!("CARGO_PKG_VERSION")),
             Style::default()
                 .fg(theme.accent())
                 .add_modifier(Modifier::BOLD),
@@ -98,8 +101,9 @@ fn draw_test(f: &mut Frame, app: &App) {
             );
         f.render_widget(graph, graph_rect);
     }
-
-    let lines = widgets::build_test_lines(&app.test, theme);
+    
+    let text_width = text_area.width.saturating_sub(8) as usize;
+    let lines = widgets::build_test_lines(&app.test, theme, text_width);
     let body = Paragraph::new(lines)
         .style(Style::default().bg(theme.bg()).fg(theme.fg()))
         .wrap(Wrap { trim: false })
@@ -107,36 +111,92 @@ fn draw_test(f: &mut Frame, app: &App) {
         .block(Block::default().padding(ratatui::widgets::Padding::new(4, 4, 2, 2)));
     f.render_widget(body, text_area);
 
-    // footer: live stats plus a compact cheat sheet
     let stats_line = Line::from(widgets::stat_spans(
         &app.test,
         theme,
         app.settings.show_live_wpm,
         app.settings.show_accuracy,
     ));
+
     let hint = Line::from(vec![
-        Span::styled("tab", Style::default().fg(theme.accent())),
-        Span::styled(" restart   ", Style::default().fg(theme.sub())),
         Span::styled("ctrl+h", Style::default().fg(theme.accent())),
-        Span::styled(" help   ", Style::default().fg(theme.sub())),
-        Span::styled("ctrl+t", Style::default().fg(theme.accent())),
-        Span::styled(" theme   ", Style::default().fg(theme.sub())),
-        Span::styled("ctrl+w", Style::default().fg(theme.accent())),
-        Span::styled(" words   ", Style::default().fg(theme.sub())),
-        Span::styled("ctrl+n", Style::default().fg(theme.accent())),
-        Span::styled(" mode   ", Style::default().fg(theme.sub())),
-        Span::styled("ctrl+g", Style::default().fg(theme.accent())),
-        Span::styled(" graph   ", Style::default().fg(theme.sub())),
-        Span::styled("esc, ctrl+c, ctrl+q", Style::default().fg(theme.accent())),
-        Span::styled(" quit", Style::default().fg(theme.sub())),
+        Span::styled(" keybinds/help", Style::default().fg(theme.sub())),
     ]);
 
-    let footer = Paragraph::new(vec![stats_line, hint])
+    let footer_chunks = ratatui::layout::Layout::default()
+        .direction(ratatui::layout::Direction::Vertical)
+        .constraints([
+            ratatui::layout::Constraint::Length(1),
+            ratatui::layout::Constraint::Length(1),
+            ratatui::layout::Constraint::Length(1),
+            ratatui::layout::Constraint::Length(1),
+            ratatui::layout::Constraint::Length(1),
+            ratatui::layout::Constraint::Length(1),
+            ratatui::layout::Constraint::Length(1),
+            ratatui::layout::Constraint::Length(1),
+            ratatui::layout::Constraint::Length(1),
+        ])
+        .split(areas.footer);
+
+    let sep_top = Block::default()
+        .borders(Borders::TOP)
+        .border_style(Style::default().fg(theme.sub()));
+    f.render_widget(sep_top, footer_chunks[1]);
+
+    let stats_cols = ratatui::layout::Layout::default()
+        .direction(ratatui::layout::Direction::Horizontal)
+        .constraints([
+            ratatui::layout::Constraint::Percentage(30),
+            ratatui::layout::Constraint::Percentage(40),
+            ratatui::layout::Constraint::Percentage(30),
+        ])
+        .split(footer_chunks[3]);
+
+    let current_pb = app.settings.get_pb(&app.test.mode.label());
+
+    let pb_widget = if current_pb > 0.0 {
+        Paragraph::new(Line::from(vec![
+            Span::styled("PB: ", Style::default().fg(theme.sub())),
+            Span::styled(
+                format!("{:.0}", current_pb),
+                Style::default().fg(theme.accent()).add_modifier(Modifier::BOLD),
+            ),
+        ]))
+    } else {
+        Paragraph::new(Line::from(vec![
+            Span::styled("PB: ", Style::default().fg(theme.sub())),
+            Span::styled("--", Style::default().fg(theme.sub())),
+        ]))
+    };
+
+    let pb_widget = pb_widget
+        .style(Style::default().bg(theme.bg()))
+        .alignment(Alignment::Left)
+        .block(Block::default().padding(ratatui::widgets::Padding::new(2, 0, 0, 0)));
+
+    f.render_widget(pb_widget, stats_cols[0]);
+
+    let stats_widget = Paragraph::new(stats_line)
         .style(Style::default().bg(theme.bg()).fg(theme.fg()))
         .alignment(Alignment::Center);
+    f.render_widget(stats_widget, stats_cols[1]);
 
-    f.render_widget(footer, areas.footer);
-}
+    let sep_bottom = Block::default()
+        .borders(Borders::TOP)
+        .border_style(Style::default().fg(theme.sub()));
+    f.render_widget(sep_bottom, footer_chunks[5]);
+
+    let hint_widget = Paragraph::new(hint)
+        .style(Style::default().bg(theme.bg()).fg(theme.fg()))
+        .alignment(Alignment::Center);
+    f.render_widget(hint_widget, footer_chunks[7]);
+
+    let sep_bottom = Block::default() 
+        .borders(Borders::TOP)
+        .border_style(Style::default().fg(theme.sub()));
+    f.render_widget(sep_bottom, footer_chunks[8]);
+  }
+
 
 fn draw_results(f: &mut Frame, app: &App) {
     let theme = &app.theme;
@@ -216,7 +276,7 @@ fn draw_help(f: &mut Frame, app: &App) {
     let theme = &app.theme;
     let lines = vec![
         Line::from(Span::styled(
-            "typoist — help",
+            "typoist — keybinds",
             Style::default()
                 .fg(theme.accent())
                 .add_modifier(Modifier::BOLD),
@@ -231,7 +291,7 @@ fn draw_help(f: &mut Frame, app: &App) {
         Line::from("  ctrl+l    toggle live WPM"),
         Line::from("  ctrl+a    toggle accuracy display"),
         Line::from("  ctrl+g    toggle live WPM graph"),
-        Line::from("  ctrl+h    this help  (or F1)"),
+        Line::from("  ctrl+h    this keybind/help menu  (or F1)"),
         Line::from(""),
         Line::from(Span::styled(
             "  press any key to close",

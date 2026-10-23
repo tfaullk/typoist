@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
+╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
+   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
+   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
+   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
+   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
 
 Made with ♥ by tfaullk
 
@@ -42,13 +42,12 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> InputAction {
     }
     
     match app.screen {
+        Screen::Menu => handle_menu(app, key),
         Screen::Test => handle_test(app, key),
         Screen::Results => handle_results(app, key),
         Screen::ThemePicker => handle_theme_picker(app, key),
-        // help closes on any keypress
-        Screen::Help => {
-            app.screen = Screen::Test;
-        }
+        Screen::Help => handle_help(app, key),
+        Screen::Update => handle_update(app, key),
     }
 
     InputAction::None
@@ -100,8 +99,7 @@ fn handle_test(app: &mut App, key: KeyEvent) {
             app.test.push_char(c);
             // finished mid-word means we ran out of text, show the results
             if app.test.status == crate::engine::TestStatus::Finished {
-                app.screen = Screen::Results;
-                let _ = app.settings.save();
+                app.finish_test_and_show_results(); 
             }
         }
         _ => {}
@@ -141,7 +139,14 @@ fn handle_theme_picker(app: &mut App, key: KeyEvent) {
     }
 
     match key.code {
-        KeyCode::Esc => app.screen = Screen::Test,
+        KeyCode::Esc => {
+            use crate::engine::TestStatus;
+            if app.test.status == TestStatus::NotStarted {
+                app.screen = Screen::Menu;
+            } else {
+                app.screen = Screen::Test;
+            }
+        }
         KeyCode::Up => {
             // wrap around at the top
             if app.theme_index == 0 {
@@ -179,6 +184,57 @@ fn handle_theme_picker(app: &mut App, key: KeyEvent) {
             app.settings.theme = app.themes[app.theme_index].name.clone();
             let _ = app.settings.save();
             app.screen = Screen::Test;
+        }
+        _ => {}
+    }
+}
+
+fn handle_menu(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Up | KeyCode::Char('k') => app.menu_up(),
+        KeyCode::Down | KeyCode::Char('j') => app.menu_down(),
+        KeyCode::Enter | KeyCode::Char(' ') => app.menu_activate(),
+        KeyCode::Esc => app.should_quit = true,
+        KeyCode::Char('q') => app.should_quit = true,
+        KeyCode::Char('h') => app.screen = Screen::Help,
+        _ => {}
+    }
+}
+
+fn handle_help(app: &mut App, _key: KeyEvent) {
+    use crate::engine::TestStatus;
+    if app.test.status == TestStatus::NotStarted {
+        app.screen = Screen::Menu;
+    } else {
+        app.screen = Screen::Test;
+    }
+}
+
+fn handle_update(app: &mut App, key: KeyEvent) {
+    use crate::update::{tui_check, tui_install, TuiUpdateState};
+
+    match (&app.update_state, key.code) {
+        (_, KeyCode::Esc) => {
+            app.update_state = TuiUpdateState::default();
+            app.screen = Screen::Menu;
+        }
+        (TuiUpdateState::Idle, KeyCode::Enter) => {
+            app.update_state = TuiUpdateState::Checking;
+            app.update_state = tui_check();
+        }
+        (TuiUpdateState::Available { current, latest }, KeyCode::Enter) => {
+            let (c, l ) = (current.clone(), latest.clone());
+            app.update_state = TuiUpdateState::Installing;
+            app.update_state = tui_install(c, l);
+        }
+        (TuiUpdateState::UpToDate { .. }, KeyCode::Enter) => {
+            app.update_state = TuiUpdateState::Idle;
+        }
+        (TuiUpdateState::Done { .. }, KeyCode::Enter) => {
+            app.update_state = TuiUpdateState::Idle;
+        }
+        (TuiUpdateState::Error(_), KeyCode::Enter) => {
+            app.update_state = TuiUpdateState::Idle;
         }
         _ => {}
     }

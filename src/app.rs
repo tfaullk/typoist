@@ -1,16 +1,17 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
+╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
+   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
+   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
+   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
+   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
 
 Made with ♥ by tfaullk
 
 */
+
 
 
 use crate::config::Settings;
@@ -20,10 +21,12 @@ use crate::words::WordGenerator;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Screen {
+    Menu,
     Test,
     Results,
     ThemePicker,
     Help,
+    Update,
 }
 
 pub struct App {
@@ -36,7 +39,17 @@ pub struct App {
     pub theme_index: usize,
     pub theme_warnings: Vec<ThemeWarning>,
     pub theme_warning_index: usize,
+    pub menu_index: usize,
+    pub update_state: crate::update::TuiUpdateState,
     generator: WordGenerator,
+}
+
+fn word_count_for(mode: TestMode) -> usize {
+    match mode {
+        TestMode::Time(_) => 120,
+        TestMode::Words(n) => n,
+        TestMode::Quote => 30,
+    }
 }
 
 impl App {
@@ -66,7 +79,7 @@ impl App {
 
         Ok(Self {
             should_quit: false,
-            screen: Screen::Test,
+            screen: Screen::Menu,
             theme,
             themes: available_themes,
             settings,
@@ -75,16 +88,60 @@ impl App {
             // if some theme files were broken, let the user know but don't die
             theme_warnings,
             theme_warning_index: 0,
+            menu_index: 0,
+            update_state: crate::update::TuiUpdateState::default(),
             generator,
         })
     }
 
+    pub const MENU_ITEMS: usize = 5;
+
+    pub fn menu_labels() -> [&'static str; Self::MENU_ITEMS] {
+        ["Start", "Themes", "Keybinds", "Update", "Exit"]
+    }
+
+    pub fn menu_up(&mut self) {
+        if self.menu_index == 0 {
+            self.menu_index = Self::MENU_ITEMS - 1;
+        } else {
+            self.menu_index -= 1;
+        }
+    }
+
+    pub fn menu_down(&mut self) {
+        self.menu_index = (self.menu_index + 1) % Self::MENU_ITEMS;
+    }
+
+    pub fn menu_activate(&mut self) {
+        match self.menu_index {
+            0 => {
+                self.restart_test(true);
+                self.screen = Screen::Test;
+            }
+            1 => {
+                self.screen = Screen::ThemePicker;
+                self.theme_index = self
+                    .themes
+                    .iter()
+                    .position(|theme| theme.name == self.theme.name)
+                    .unwrap_or(0);
+            }
+            2 => {
+                self.screen = Screen::Help;
+            }
+            3 => {
+                self.update_state = crate::update::TuiUpdateState::default();
+                self.screen = Screen::Update;
+            }
+            4 => {
+                self.should_quit = true;
+            }
+            _ => {}
+        }
+    }
+
     pub fn restart_test(&mut self, new_words: bool) {
-        let count = match self.test.mode {
-            TestMode::Time(_) => 120,
-            TestMode::Words(n) => n,
-            TestMode::Quote => 30,
-        };
+        let count = word_count_for(self.test.mode);
         // esc = same words again, tab = fresh ones
         let new = if new_words {
             Some(self.generator.generate(count))
@@ -132,12 +189,33 @@ impl App {
         }
     }
 
+    pub fn check_personal_best(&mut self) {
+        let mode_label = self.test.mode.label();
+        let current_wpm = self.test.stats.wpm();
+
+        if current_wpm > 0.0 {
+            let pb = self.settings.get_pb(&mode_label);
+            if current_wpm > pb {
+                self.settings.personal_bests.insert(mode_label, current_wpm);
+                let _ = self.settings.save();
+            }
+        }
+    }
+
+    pub fn finish_test_and_show_results(&mut self) {
+        if self.screen != Screen::Test {
+            return;
+        }
+        self.check_personal_best();
+        let _ = self.settings.save();
+        self.screen = Screen::Results;
+    }
+
     pub fn tick(&mut self) {
         self.test.tick();
         // catches the "timer ran out" case, since there's no keypress for that
         if self.test.status == TestStatus::Finished && self.screen == Screen::Test {
-            self.screen = Screen::Results;
-            let _ = self.settings.save();
+            self.finish_test_and_show_results();
         }
     }
 

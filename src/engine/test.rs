@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
+╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
+   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
+   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
+   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
+   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
 
 Made with ♥ by tfaullk
 
@@ -63,14 +63,13 @@ pub struct TypingTest {
     pub stats: Stats,
     started_at: Option<Instant>,
     last_sample_at: Option<Instant>,
-    sample_keystrokes: usize,
+    target_cache: Vec<char>,
 }
 
 impl TypingTest {
     pub fn new(words: Vec<String>, mode: TestMode) -> Self {
-        // one slot per char plus the spaces between words
-        let total_chars: usize =
-            words.iter().map(|w| w.len()).sum::<usize>() + words.len().saturating_sub(1);
+        let target_cache = Self::flatten(&words);
+        let total_chars = target_cache.len();
         Self {
             words,
             typed: Vec::with_capacity(total_chars),
@@ -80,22 +79,23 @@ impl TypingTest {
             stats: Stats::new(),
             started_at: None,
             last_sample_at: None,
-            sample_keystrokes: 0,
+            target_cache,
         }
     }
 
-    // flatten everything into one stream of chars, spaces included
-    pub fn target_chars(&self) -> Vec<char> {
+    fn flatten(words: &[String]) -> Vec<char> {
         let mut out = Vec::new();
-        for (i, w) in self.words.iter().enumerate() {
-            for c in w.chars() {
-                out.push(c);
-            }
-            if i != self.words.len() - 1 {
+        for (i, w) in words.iter().enumerate() {
+            out.extend(w.chars());
+            if i != words.len() - 1 {
                 out.push(' ');
             }
         }
         out
+    }
+
+    pub fn target_chars(&self) -> &[char] {
+        &self.target_cache
     }
 
     // the timer only starts on the first keystroke, like monkeytype
@@ -135,22 +135,30 @@ impl TypingTest {
         }
         self.sample_if_due();
 
-        if self.cursor >= target.len() && self.all_words_complete(&target) {
+        if self.cursor >= self.target_cache.len() {
             self.finish();
         }
     }
-
-    fn all_words_complete(&self, target: &[char]) -> bool {
-        self.cursor >= target.len()
-    }
-
     // note: this doesn't undo the mistake in the stats, it's display-only
     pub fn backspace(&mut self) {
-        if self.status != TestStatus::Running || self.typed.is_empty() {
+        if self.status != TestStatus::Running {
             return;
+        } 
+        let Some(last) =self.typed.pop() else {
+            return;
+        };
+        self.cursor = self.typed.len();
+        self.stats.total_keystrokes = self.stats.total_keystrokes.saturating_sub(1);
+        match last.state {
+            CharState::Correct => {
+                self.stats.correct_keystrokes = self.stats.correct_keystrokes.saturating_sub(1)
+            }
+            CharState::Incorrect | CharState::Extra => {
+                self.stats.incorrect_keystrokes = 
+                    self.stats.incorrect_keystrokes.saturating_sub(1)
+            }
+            CharState::Pending => {}
         }
-        self.typed.pop();
-        self.cursor = self.cursor.saturating_sub(1);
     }
 
     // called from the main loop's tick, mostly to keep elapsed time fresh
@@ -186,7 +194,6 @@ impl TypingTest {
             let wpm = self.stats.wpm();
             self.stats.push_wpm_sample(wpm);
             self.last_sample_at = Some(now);
-            self.sample_keystrokes = 0;
         }
     }
 
@@ -205,6 +212,7 @@ impl TypingTest {
             self.words = w;
         }
         // keep the old capacity around, saves a realloc
+        self.target_cache = Self::flatten(&self.words);
         let cap = self.typed.capacity();
         self.typed = Vec::with_capacity(cap);
         self.cursor = 0;

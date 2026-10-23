@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
+╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
+   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
+   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
+   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
+   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
 
 Made with ♥ by tfaullk
 
@@ -268,4 +268,67 @@ pub fn check_for_update_quietly() -> Option<Version>{
     } else {
         None
     }
+}
+
+#[derive(Debug, Clone, Default)]
+pub enum TuiUpdateState {
+    #[default]
+    Idle,
+    Checking,
+    UpToDate { current: Version },
+    Available { current: Version, latest: Version },
+    Installing,
+    Done { from: Version, to: Version },
+    Error(String),
+}
+
+pub fn tui_check() -> TuiUpdateState {
+    let current = current_version();
+    match fetch_latest() {
+        Ok(release) => match parse_tag(&release.tag_name) {
+            Some(latest) if latest > current => TuiUpdateState::Available { current, latest },
+            Some(_) => TuiUpdateState::UpToDate { current },
+            None => TuiUpdateState::Error(format!(
+                "could not parse tag: {:?}",
+                release.tag_name
+            )),
+        },
+        Err(e) => TuiUpdateState::Error(e.to_string()),
+    }
+}
+
+pub fn tui_install(current: Version, latest: Version) -> TuiUpdateState {
+    let target = current_target();
+    let wanted = artifact_name(&latest, target);
+
+    let release = match fetch_latest() {
+        Ok(r) => r,
+        Err(e) => return TuiUpdateState::Error(e.to_string()),
+    };
+
+    let asset = match release.assets.iter().find(|a| a.name == wanted) {
+        Some(a) => a,
+        None =>{
+            return TuiUpdateState::Error(format!(
+                "no release artifact for platform ({})",
+                target
+            ))   
+        }
+    };
+
+    let exe = match current_exe() {
+        Ok(p) => p,
+        Err(e) => return TuiUpdateState::Error(e.to_string()),
+    };
+    let staging = exe.with_extension("new");
+
+    if let Err(e) = download_asset(asset, &staging) {
+        return TuiUpdateState::Error(e.to_string());
+    }
+
+    if let Err(e) = install_binary(&staging, &exe) {
+        return TuiUpdateState::Error(e.to_string());
+    }
+
+    TuiUpdateState::Done { from: current, to: latest }
 }

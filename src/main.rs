@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
+╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
+   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
+   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
+   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
+   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
 
 Made with ♥ by tfaullk
 
@@ -39,6 +39,8 @@ use cli::CliArgs;
 use config::Settings;
 use error::Result;
 use input::InputAction;
+
+const TICK_RATE: Duration = Duration::from_millis(50);
 
 fn main() -> Result<()> {
     // cli args override whatever's in the settings file, makes sense
@@ -76,14 +78,13 @@ fn main() -> Result<()> {
 fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, settings: Settings) -> Result<()> {
     let mut app = App::new(settings)?;
     // 50ms is snappy enough for live wpm without cooking the cpu
-    let tick_rate = Duration::from_millis(50);
     let mut last_tick = Instant::now();
 
     loop {
         terminal.draw(|f| ui::draw(f, &app))?;
 
         // just sleep until the next tick if nothing's happening
-        let timeout = tick_rate
+        let timeout = TICK_RATE
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
 
@@ -100,7 +101,7 @@ fn run<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, settings: Setti
             }
         }
 
-        if last_tick.elapsed() >= tick_rate {
+        if last_tick.elapsed() >= TICK_RATE {
             app.tick();
             last_tick = Instant::now();
         }

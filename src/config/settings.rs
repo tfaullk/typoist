@@ -1,17 +1,18 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
+╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
+   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
+   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
+   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
+   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
 
 Made with ♥ by tfaullk
 
 */
 
+use std::collections::HashMap;
 use super::paths;
 use crate::engine::TestMode;
 use crate::error::Result;
@@ -29,6 +30,8 @@ pub struct Settings {
     pub show_accuracy: bool,
     pub cursor_style: CursorStyle,
     pub show_wpm_graph: bool,
+    #[serde(default)]
+    pub personal_bests: HashMap<String, f64>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -49,6 +52,7 @@ impl Default for Settings {
             show_accuracy: true,
             cursor_style: CursorStyle::Block,
             show_wpm_graph: true,
+            personal_bests: HashMap::new(),
         }
     }
 }
@@ -80,18 +84,26 @@ impl Settings {
         Ok(())
     }
 
+    pub fn get_pb(&self, mode: &str) -> f64 {
+        *self.personal_bests.get(mode).unwrap_or(&0.0)
+    }
+
     pub fn word_set(&self) -> WordSet {
         WordSet::from_label(&self.word_set).unwrap_or(WordSet::English)
     }
 
     // "time 30" -> TestMode::Time(30), you get the idea
     pub fn test_mode(&self) -> TestMode {
-        let mut parts = self.mode.split_whitespace();
-        match (parts.next(), parts.next()) {
-            (Some("time"), Some(n)) => TestMode::Time(n.parse().unwrap_or(30)),
-            (Some("words"), Some(n)) => TestMode::Words(n.parse().unwrap_or(25)),
-            (Some("quote"), _) => TestMode::Quote,
-            _ => TestMode::Time(30),
-        }
+        parse_mode(&self.mode).unwrap_or(TestMode::Time(30)) 
+    }
+}
+
+fn parse_mode(s: &str) -> Option<TestMode> {
+    let mut parts = s.split_whitespace();
+    match (parts.next(), parts.next()) {
+        (Some("time"), Some(n)) => Some(TestMode::Time(n.parse().ok()?)),
+        (Some("words"), Some(n)) => Some(TestMode::Words(n.parse().ok()?)),
+        (Some("quote"), _) => Some(TestMode::Quote),
+        _ => None,
     }
 }

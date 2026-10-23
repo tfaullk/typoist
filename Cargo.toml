@@ -1,6 +1,6 @@
 [package]
 name = "typoist"
-version = "1.4.0"
+version = "1.5.0"
 edition = "2021"
 rust-version = "1.74"
 authors = ["tfaullk"]
@@ -21,8 +21,8 @@ dirs = "5.0" ## Cross-Platform Config/Data Directory Resolution
 rand = "0.8" ## Random Number Generation Library
 thiserror = "1.0" ## Custom Error Handling 
 unicode-width = "0.1" ## Unicode 
-ureq = { version = "2.10", default-features = false, features = ["json", "tls"] }
-semver = "1.0"
+ureq = { version = "2.10", default-features = false, features = ["json", "tls"] } ## for http
+semver = "1.0" ## Rust Semantic Versioning
 
 [profile.release]
 opt-level = 3

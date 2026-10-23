@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
+╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
+   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
+   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
+   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
+   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
 
 Made with ♥ by tfaullk
 
@@ -19,12 +19,12 @@ use ratatui::text::{Line, Span};
 
 // turn the test into styled lines: typed chars get colored by how you did,
 // the next char gets the "cursor" treatment, the rest stay dim
-pub fn build_test_lines(test: &TypingTest, theme: &Theme) -> Vec<Line<'static>> {
+pub fn build_test_lines(test: &TypingTest, theme: &Theme, max_cols: usize) -> Vec<Line<'static>> {
     let target = test.target_chars();
     let mut lines: Vec<Line> = Vec::new();
     let mut current = Vec::<Span>::new();
     let mut col = 0usize;
-    let max_cols = 80usize;
+    let max_cols = max_cols.max(20);
 
     for (i, ch) in target.iter().enumerate() {
         let (style, display_char) = if i < test.typed.len() {
@@ -137,10 +137,7 @@ pub fn build_wpm_graph(test: &TypingTest, theme: &Theme, width: usize) -> Vec<Li
     );
 
     vec![
-        Line::from(vec![
-            Span::styled(label, Style::default().fg(theme.sub())),
-            Span::raw(""),
-        ]),
+        Line::from(Span::styled(label, Style::default().fg(theme.sub()))),
         Line::from(graph_spans),
     ]
 }

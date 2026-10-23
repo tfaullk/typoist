@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ░░███╗░░░░░░░██╗██╗░░░░█████╗░
-╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ░████║░░░░░░██╔╝██║░░░██╔══██╗
-░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ██╔██║░░░░░██╔╝░██║░░░██║░░██║
-░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ╚═╝██║░░░░░███████║░░░██║░░██║
-░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚════██║██╗╚█████╔╝
-░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░░░░░╚═╝╚═╝░╚════╝░
+████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
+╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
+   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
+   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
+   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
+   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
 
 Made with ♥ by tfaullk
 
@@ -114,26 +114,9 @@ pub struct WordGenerator {
 
 impl WordGenerator {
     pub fn new(set: WordSet) -> Self {
-        let (set, pool) = match &set {
-            WordSet::Custom(name) => match custom::load(name) {
-                Ok(Some(list)) if !list.words.is_empty() => (set.clone(), list.words),
-                _ => (
-                    WordSet::English,
-                    ENGLISH_200.iter().map(|s| s.to_string()).collect(),
-                ),
-            },
-            WordSet::English | WordSet::EnglishPunctuation => (
-                set.clone(),
-                ENGLISH_200.iter().map(|s| s.to_string()).collect(),
-            ),
-            WordSet::Code | WordSet::CodeSymbols => (
-                set.clone(),
-                CODE_200.iter().map(|s| s.to_string()).collect(),
-            ),
-        };
-
+        let (resolved_set, pool) = resolve_pool(&set);
         Self {
-            set,
+            set: resolved_set,
             pool,
             rng: rand::thread_rng(),
         }
@@ -164,6 +147,30 @@ impl WordGenerator {
             }
         }
         words
+    }
+}
+
+fn resolve_pool(set: &WordSet) -> (WordSet, Vec<String>) {
+    match set {
+        WordSet::Custom(name) => {
+            match custom::load(name) {
+                Ok(Some(list)) if !list.words.is_empty() => {
+                    (set.clone(), list.words)
+                }
+                _ => {
+                    let pool = ENGLISH_200.iter().map(|s| s.to_string()).collect();
+                    (WordSet::English, pool)
+                }
+            }
+        }
+        WordSet::English | WordSet::EnglishPunctuation => {
+            let pool = ENGLISH_200.iter().map(|s| s.to_string()).collect();
+            (set.clone(), pool)
+        }
+        WordSet::Code | WordSet::CodeSymbols => {
+            let pool = CODE_200.iter().map(|s| s.to_string()).collect();
+            (set.clone(), pool)
+        }
     }
 }
 
