@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
-╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
-   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
-   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
-   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
-   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
+████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ██████╗░░░░░█████╗░░░░░█████╗░
+╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ╚════██╗░░░██╔══██╗░░░██╔══██╗
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ░░███╔═╝░░░██║░░██║░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ██╔══╝░░░░░██║░░██║░░░██║░░██║
+░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚█████╔╝██╗╚█████╔╝
+░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░╚════╝░╚═╝░╚════╝░
 
 Made with ♥ by tfaullk
 
@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use super::paths;
 use crate::engine::TestMode;
 use crate::error::Result;
+use crate::input::keybinds::KeyAction;
 use crate::words::WordSet;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -24,7 +25,6 @@ use std::fs;
 pub struct Settings {
     pub theme: String,
     pub word_set: String,
-    // stored as a string like "time 30" so the toml stays easy to read
     pub mode: String,
     pub show_live_wpm: bool,
     pub show_accuracy: bool,
@@ -32,6 +32,20 @@ pub struct Settings {
     pub show_wpm_graph: bool,
     #[serde(default)]
     pub personal_bests: HashMap<String, f64>,
+    #[serde(default)]
+    pub keybinds: HashMap<String, String>,
+    #[serde(default = "default_chord_timeout")]
+    pub steno_chord_timeout_ms: u64,
+    #[serde(default = "default_steno_prompt_count")]
+    pub steno_prompt_count: usize,
+}
+
+fn default_chord_timeout() -> u64 {
+    500
+}
+
+fn default_steno_prompt_count() -> usize {
+    30
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -53,6 +67,9 @@ impl Default for Settings {
             cursor_style: CursorStyle::Block,
             show_wpm_graph: true,
             personal_bests: HashMap::new(),
+            keybinds: HashMap::new(),
+            steno_chord_timeout_ms: default_chord_timeout(),
+            steno_prompt_count: default_steno_prompt_count(),
         }
     }
 }
@@ -77,10 +94,16 @@ impl Settings {
 
         #[cfg(windows)]
         {
-            let _ = fs::remove_file(&path);
+            if fs::rename(&tmp, &path).is_err() {
+                fs::remove_file(&path)?;
+                fs::rename(&tmp, &path)?;
+            }
+        }
+        #[cfg(not(windows))]
+        {
+            fs::rename(&tmp, &path)?;
         }
 
-        fs::rename(&tmp, &path)?;
         Ok(())
     }
 
@@ -96,14 +119,49 @@ impl Settings {
     pub fn test_mode(&self) -> TestMode {
         parse_mode(&self.mode).unwrap_or(TestMode::Time(30)) 
     }
+
+    pub fn keybind_for(&self, action: KeyAction) -> crate::input::keybinds::KeySpec {
+        self.keybinds
+            .get(action.id())
+            .and_then(|s| crate::input::keybinds::KeySpec::parse(s))
+            .unwrap_or_else(|| action.default_spec())
+    }
+
+    pub fn set_keybind(&mut self, action: KeyAction, spec: Option<String>) {
+        match spec {
+            Some(s) => {
+                self.keybinds.insert(action.id().to_string(), s);
+            }
+            None => {
+                self.keybinds.remove(action.id());
+            }
+        }
+    }
+
+    pub fn is_default_keybind(&self, action: KeyAction) -> bool {
+        !self.keybinds.contains_key(action.id())
+    }
 }
 
 fn parse_mode(s: &str) -> Option<TestMode> {
     let mut parts = s.split_whitespace();
-    match (parts.next(), parts.next()) {
-        (Some("time"), Some(n)) => Some(TestMode::Time(n.parse().ok()?)),
-        (Some("words"), Some(n)) => Some(TestMode::Words(n.parse().ok()?)),
-        (Some("quote"), _) => Some(TestMode::Quote),
+
+    match (parts.next(), parts.next(), parts.next()) {
+        (Some("time"), Some(n), None) => {
+            let seconds = n.parse::<u64>().ok()?;
+            if seconds == 0 {
+                return None;
+            }
+            Some(TestMode::Time(seconds))
+        }
+        (Some("words"), Some(n), None) => {
+            let count = n.parse::<usize>().ok()?;
+            if count == 0 {
+                return None;
+            }
+            Some(TestMode::Words(count))
+        }
+        (Some("quote"), None, None) => Some(TestMode::Quote),
         _ => None,
     }
 }

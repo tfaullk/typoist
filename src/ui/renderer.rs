@@ -1,17 +1,16 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
-╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
-   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
-   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
-   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
-   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
+████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ██████╗░░░░░█████╗░░░░░█████╗░
+╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ╚════██╗░░░██╔══██╗░░░██╔══██╗
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ░░███╔═╝░░░██║░░██║░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ██╔══╝░░░░░██║░░██║░░░██║░░██║
+░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚█████╔╝██╗╚█████╔╝
+░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░╚════╝░╚═╝░╚════╝░
 
 Made with ♥ by tfaullk
 
 */
-
 
 use ratatui::layout::Alignment;
 use ratatui::style::{Modifier, Style};
@@ -20,30 +19,142 @@ use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::app::{App, Screen};
+use crate::input::keybinds::KeyAction;
 use crate::themes::ThemeWarning;
-use crate::ui::{layout, widgets};
 use crate::ui::screens;
+use crate::ui::{layout, widgets};
 
 pub fn draw(f: &mut Frame, app: &App) {
     let theme = &app.theme;
     let bg = Style::default().bg(theme.bg()).fg(theme.fg());
-    // paint the whole screen first so there's no terminal flicker showing through
     f.render_widget(Block::default().style(bg), f.size());
 
     match app.screen {
         Screen::Menu => screens::menu::draw(f, app),
         Screen::Test => draw_test(f, app),
+        Screen::Steno => draw_steno(f, app),
         Screen::Results => draw_results(f, app),
         Screen::ThemePicker => draw_theme_picker(f, app),
         Screen::Help => draw_help(f, app),
+        Screen::Keybinds => draw_keybinds(f, app),
         Screen::Update => screens::update::draw(f, app),
     }
-    // error popup sits on top of whatever screen is showing
     if let Some(warning) = app.current_theme_warning() {
         draw_theme_warning_popup(f, app, warning);
-    } 
+    }
 }
 
+fn draw_steno(f: &mut Frame, app: &App) {
+    let theme = &app.theme;
+    let areas = layout::split(f.size());
+
+    let header = Paragraph::new(Line::from(vec![
+        Span::styled(
+            format!("typoist {}  steno", env!("CARGO_PKG_VERSION")),
+            Style::default()
+                .fg(theme.accent())
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw("  "),
+        Span::styled(
+            format!(
+                "{}/{}",
+                app.steno.index.min(app.steno.total_prompts()),
+                app.steno.total_prompts()
+            ),
+            Style::default().fg(theme.sub()),
+        ),
+    ]))
+    .style(Style::default().bg(theme.bg()).fg(theme.fg()))
+    .block(
+        Block::default()
+            .borders(Borders::BOTTOM)
+            .border_style(Style::default().fg(theme.sub())),
+    );
+    f.render_widget(header, areas.header);
+
+    let prompt_word = app
+        .steno
+        .current()
+        .map(|p| p.word.clone())
+        .unwrap_or_else(|| "-".to_string());
+    let prompt_outline = app
+        .steno
+        .current()
+        .map(|p| p.outline.clone())
+        .unwrap_or_default();
+
+    let mut lines: Vec<Line> = Vec::new();
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "type this word",
+        Style::default().fg(theme.sub()),
+    )));
+    lines.push(Line::from(Span::styled(
+        prompt_word,
+        Style::default()
+            .fg(theme.accent())
+            .add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        format!("outline: {}", prompt_outline),
+        Style::default().fg(theme.pending()),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "your chord",
+        Style::default().fg(theme.sub()),
+    )));
+
+    let pending: String = app.steno.pending_keys.iter().collect();
+    let pending_display = if pending.is_empty() {
+        "<waiting>".to_string()
+    } else {
+        pending
+    };
+    lines.push(Line::from(Span::styled(
+        pending_display,
+        Style::default()
+            .fg(theme.cursor())
+            .add_modifier(Modifier::REVERSED),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "press space or * to commit chord",
+        Style::default().fg(theme.sub()),
+    )));
+
+    let body = Paragraph::new(lines)
+        .style(Style::default().bg(theme.bg()).fg(theme.fg()))
+        .wrap(Wrap { trim: false })
+        .block(Block::default().padding(ratatui::widgets::Padding::new(4, 4, 2, 2)));
+    f.render_widget(body, areas.body);
+
+    let stats_line = Line::from(vec![
+        Span::styled(
+            format!("{:>5.0} wpm", app.steno.wpm()),
+            Style::default()
+                .fg(theme.accent())
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw("   "),
+        Span::styled(
+            format!("{:>4.1}% acc", app.steno.accuracy()),
+            Style::default().fg(theme.accent()),
+        ),
+        Span::raw("   "),
+        Span::styled(
+            format!("{:.1}s", app.steno.stats.elapsed.as_secs_f64()),
+            Style::default().fg(theme.sub()),
+        ),
+    ]);
+
+    let footer = Paragraph::new(stats_line)
+        .style(Style::default().bg(theme.bg()).fg(theme.fg()))
+        .alignment(Alignment::Center);
+    f.render_widget(footer, areas.footer);
+}
 fn draw_test(f: &mut Frame, app: &App) {
     let theme = &app.theme;
     let areas = layout::split(f.size());
@@ -118,8 +229,9 @@ fn draw_test(f: &mut Frame, app: &App) {
         app.settings.show_accuracy,
     ));
 
+    let help_bind = app.settings.keybind_for(KeyAction::OpenHelp).display();
     let hint = Line::from(vec![
-        Span::styled("ctrl+h", Style::default().fg(theme.accent())),
+        Span::styled(help_bind, Style::default().fg(theme.accent())),
         Span::styled(" keybinds/help", Style::default().fg(theme.sub())),
     ]);
 
@@ -202,7 +314,9 @@ fn draw_results(f: &mut Frame, app: &App) {
     let theme = &app.theme;
 
     let stats = &app.test.stats;
-    let lines = vec![
+    let steno = &app.steno;
+
+    let mut lines = vec![
         Line::from(Span::styled(
             "Test Complete",
             Style::default()
@@ -210,16 +324,68 @@ fn draw_results(f: &mut Frame, app: &App) {
                 .add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
-        Line::from(format!("WPM: {:.1}", stats.wpm())),
-        Line::from(format!("Raw WPM: {:.1}", stats.raw_wpm())),
-        Line::from(format!("Accuracy: {:.1}%", stats.accuracy())),
-        Line::from(format!("Consistency: {:.1}%", stats.consistency())),
-        Line::from(""),
-        Line::from(Span::styled(
-            "Press Tab to restart • Esc to return",
-            Style::default().fg(theme.sub()),
-        )),
     ];
+
+    if steno.status == crate::engine::StenoStatus::Finished {
+        lines.push(Line::from(format!("Steno WPM: {:.1}", steno.wpm())));
+        lines.push(Line::from(format!("Accuracy: {:.1}%", steno.accuracy())));
+        lines.push(Line::from(format!(
+            "Strokes: {} ({} correct)",
+            steno.stroke_count, steno.correct_strokes
+        )));
+
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled(
+            "Recent strokes:",
+            Style::default().fg(theme.sub()),
+        )));
+        for stroke in steno.last_strokes(5) {
+            let (marker, style) = if stroke.correct {
+                ("✓", Style::default().fg(theme.correct()))
+            } else {
+                ("✗", Style::default().fg(theme.incorrect()))
+            };
+            lines.push(Line::from(Span::styled(
+                format!(
+                    "  {} {:<10} -> {:<10} ({:.2}s)",
+                    marker,
+                    stroke.expected,
+                    stroke.actual,
+                    stroke.elapsed.as_secs_f64(),
+                ),
+                style,
+            )));
+        }
+
+        let wrong: Vec<_> = steno.wrong_strokes().collect();
+        if !wrong.is_empty() {
+            lines.push(Line::from(""));
+            lines.push(Line::from(Span::styled(
+                format!("Missed strokes ({}):", wrong.len()),
+                Style::default().fg(theme.incorrect()),
+            )));
+            for stroke in wrong.iter().take(3) {
+                lines.push(Line::from(Span::styled(
+                    format!(
+                        "  {:<10} -> {:<10}",
+                        stroke.expected, stroke.actual
+                    ),
+                    Style::default().fg(theme.sub()),
+                )));
+            }
+        }
+    } else {
+        lines.push(Line::from(format!("WPM: {:.1}", stats.wpm())));
+        lines.push(Line::from(format!("Raw WPM: {:.1}", stats.raw_wpm())));
+        lines.push(Line::from(format!("Accuracy: {:.1}%", stats.accuracy())));
+        lines.push(Line::from(format!("Consistency: {:.1}%", stats.consistency())));
+    }
+
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "Tab restart  •  Esc back to menu  •  Enter restart",
+        Style::default().fg(theme.sub()),
+    )));
 
     let p = Paragraph::new(lines)
         .style(Style::default().bg(theme.bg()).fg(theme.fg()))
@@ -274,39 +440,137 @@ fn draw_theme_picker(f: &mut Frame, app: &App) {
 
 fn draw_help(f: &mut Frame, app: &App) {
     let theme = &app.theme;
-    let lines = vec![
+    let mut lines = vec![
         Line::from(Span::styled(
-            "typoist — keybinds",
+            "typoist -- keybinds",
             Style::default()
                 .fg(theme.accent())
                 .add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
-        Line::from("  tab       restart test (new words)"),
-        Line::from("  esc       reset current test  •  quit when idle/on results"),
-        Line::from(""),
-        Line::from("  ctrl+t    open theme picker"),
-        Line::from("  ctrl+w    cycle word set"),
-        Line::from("  ctrl+n    cycle mode"),
-        Line::from("  ctrl+l    toggle live WPM"),
-        Line::from("  ctrl+a    toggle accuracy display"),
-        Line::from("  ctrl+g    toggle live WPM graph"),
-        Line::from("  ctrl+h    this keybind/help menu  (or F1)"),
-        Line::from(""),
-        Line::from(Span::styled(
-            "  press any key to close",
-            Style::default().fg(theme.sub()),
-        )),
     ];
+    
+    for action in KeyAction::all() {
+        let spec = app.settings.keybind_for(*action).display();
+        let overridden = !app.settings.is_default_keybind(*action);
+        let spec_style = if overridden {
+            Style::default()
+                .fg(theme.accent())
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(theme.fg())
+        };
+        lines.push(Line::from(vec![
+            Span::styled(format!("  {:<12}", spec), spec_style),
+            Span::styled(action.label(), Style::default().fg(theme.sub())),
+        ]));
+    }
+
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "Edit bindings from the main menu -> Keybinds. Press any key to close",
+        Style::default().fg(theme.sub()),
+    )));
+
     let p = Paragraph::new(lines)
         .style(Style::default().bg(theme.bg()).fg(theme.fg()))
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(theme.accent())),
+                .border_style(Style::default().fg(theme.accent()))
+                .title(" help "),
         );
-    f.render_widget(ratatui::widgets::Clear, centered_rect(60, 60, f.size()));
-    f.render_widget(p, centered_rect(60, 60, f.size()));
+    let area = centered_rect(70, 70, f.size());
+    f.render_widget(ratatui::widgets::Clear, area);
+    f.render_widget(p, area);
+}
+
+fn draw_keybinds(f: &mut Frame, app: &App) {
+    let theme = &app.theme;
+    let actions = KeyAction::all();
+
+    let mut lines: Vec<Line> = Vec::new();
+    lines.push(Line::from(Span::styled(
+         "↑/↓ select   enter rebind   del/backspace reset   r reset all   esc back",
+        Style::default().fg(theme.sub()),
+    )));
+    lines.push(Line::from(""));
+
+    for (i, action) in actions.iter().enumerate() {
+        let selected = i == app.keybind_index;
+        let is_capturing = app.keybind_capture == Some(*action);
+        let spec = app.settings.keybind_for(*action);
+        let overridden = !app.settings.is_default_keybind(*action);
+
+        let spec_text = if is_capturing {
+            "<press a key>".to_string()
+        } else {
+            spec.display()
+        };
+
+        let row_style = if selected {
+            Style::default()
+                .fg(theme.bg())
+                .bg(theme.accent())
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(theme.fg())
+        };
+
+        let spec_style = if is_capturing {
+            Style::default()
+                .fg(theme.incorrect())
+                .add_modifier(Modifier::BOLD)
+        } else if selected {
+            row_style
+        } else if overridden {
+            Style::default()
+                .fg(theme.incorrect())
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(theme.fg())
+        };
+
+        let label_style = if selected {
+            row_style
+        } else {
+            Style::default().fg(theme.fg())  
+        };
+        
+        let marker = if selected { "▶ " } else { "  " };
+        lines.push(Line::from(vec![
+            Span::styled(marker.to_string(), row_style),
+            Span::styled(format!("{:<14}", spec_text), spec_style),
+            Span::styled(action.label(), label_style),
+        ]));
+    }
+
+    lines.push(Line::from(""));
+    if let Some(msg) = &app.keybind_message {
+        lines.push(Line::from(Span::styled(
+            msg.clone(),
+            Style::default().fg(theme.accent()),
+        )))
+    } else {
+        lines.push(Line::from(Span::styled(
+            "Overridden bindings are shown in bold. Defaults are grey.",
+            Style::default().fg(theme.sub()),
+        )));
+    }
+
+    let p = Paragraph::new(lines)
+        .style(Style::default().bg(theme.bg()).fg(theme.fg()))
+        .wrap(Wrap { trim: false })
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(theme.accent()))
+                .title(" keybinds "),
+        );
+
+    let area = centered_rect(78, 80, f.size());
+    f.render_widget(ratatui::widgets::Clear, area);
+    f.render_widget(p, area);
 }
 
 // the usual "cut a centered box out of the frame" helper, px/py are percentages

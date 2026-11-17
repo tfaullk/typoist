@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
-╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
-   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
-   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
-   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
-   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
+████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ██████╗░░░░░█████╗░░░░░█████╗░
+╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ╚════██╗░░░██╔══██╗░░░██╔══██╗
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ░░███╔═╝░░░██║░░██║░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ██╔══╝░░░░░██║░░██║░░░██║░░██║
+░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚█████╔╝██╗╚█████╔╝
+░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░╚════╝░╚═╝░╚════╝░
 
 Made with ♥ by tfaullk
 
@@ -252,23 +252,20 @@ fn ensure_theme_files() -> Result<()> {
     for (filename, content) in BUILTIN_THEMES {
         let path = dir.join(filename);
 
-        // only clobber the user's file if it's actually broken
-        let needs_restore = match fs::read_to_string(&path) {
-            Ok(_) => false,
+        let restore = match fs::read_to_string(&path) {
+            Ok(existing) => {
+                toml::from_str::<Theme>(&existing).is_err()
+            }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => true,
             Err(error) => return Err(error.into()),
         };
 
-        if needs_restore {
+        if restore {
             let builtin_path = Path::new(filename);
-
-            // if the built-in itself is broken that's on us, fail loudly
             let theme = parse_theme(content, builtin_path).map_err(|error| {
                 TypoistError::BuiltinThemeInvalid(filename.to_string(), error.to_string())
             })?;
-
             let serialized = toml::to_string_pretty(&theme)?;
-
             fs::write(&path, serialized)?;
         }
     }

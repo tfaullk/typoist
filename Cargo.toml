@@ -1,6 +1,6 @@
 [package]
 name = "typoist"
-version = "1.5.0"
+version = "2.0.0"
 edition = "2021"
 rust-version = "1.74"
 authors = ["tfaullk"]
@@ -23,6 +23,10 @@ thiserror = "1.0" ## Custom Error Handling
 unicode-width = "0.1" ## Unicode 
 ureq = { version = "2.10", default-features = false, features = ["json", "tls"] } ## for http
 semver = "1.0" ## Rust Semantic Versioning
+ed25519-dalek = { version = "2", features = ["rand_core", "zeroize"] }
+blake3 = "1"
+hex = "0.4"
+serde_json = "1"
 
 [profile.release]
 opt-level = 3

@@ -1,12 +1,12 @@
 /*
 
 
-████████╗██╗   ██╗██████╗  ██████╗ ██╗███████╗████████╗         ██╗   ███████╗    ██████╗ 
-╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██║██╔════╝╚══██╔══╝        ███║   ██╔════╝   ██╔═████╗
-   ██║    ╚████╔╝ ██████╔╝██║   ██║██║███████╗   ██║           ╚██║   ███████╗   ██║██╔██║
-   ██║     ╚██╔╝  ██╔═══╝ ██║   ██║██║╚════██║   ██║            ██║   ╚════██║   ████╔╝██║
-   ██║      ██║   ██║     ╚██████╔╝██║███████║   ██║            ██║██╗███████║██╗╚██████╔╝
-   ╚═╝      ╚═╝   ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝            ╚═╝╚═╝╚══════╝╚═╝ ╚═════╝
+████████╗██╗░░░██╗██████╗░░█████╗░██╗░██████╗████████╗  ██████╗░░░░░█████╗░░░░░█████╗░
+╚══██╔══╝╚██╗░██╔╝██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝  ╚════██╗░░░██╔══██╗░░░██╔══██╗
+░░░██║░░░░╚████╔╝░██████╔╝██║░░██║██║╚█████╗░░░░██║░░░  ░░███╔═╝░░░██║░░██║░░░██║░░██║
+░░░██║░░░░░╚██╔╝░░██╔═══╝░██║░░██║██║░╚═══██╗░░░██║░░░  ██╔══╝░░░░░██║░░██║░░░██║░░██║
+░░░██║░░░░░░██║░░░██║░░░░░╚█████╔╝██║██████╔╝░░░██║░░░  ███████╗██╗╚█████╔╝██╗╚█████╔╝
+░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░░╚════╝░╚═╝╚═════╝░░░░╚═╝░░░  ╚══════╝╚═╝░╚════╝░╚═╝░╚════╝░
 
 Made with ♥ by tfaullk
 
@@ -29,6 +29,10 @@ pub struct CliArgs {
     pub import_theme: Option<PathBuf>,
     pub update: bool,
     pub check_update: bool,
+    pub export_pb: Option<String>,
+    pub verify_pb: Option<PathBuf>,
+    pub show_identity: bool,
+    pub verify_pubkey: Option<String>,
 }
 
 impl CliArgs {
@@ -48,6 +52,10 @@ impl CliArgs {
             no_save: false,
             update: false,
             check_update: false,
+            export_pb: None,
+            verify_pb: None,
+            show_identity: false,
+            verify_pubkey: None,
         };
 
         while let Some(a) = args.next() {
@@ -90,6 +98,10 @@ impl CliArgs {
                     println!("typoist {}", env!("CARGO_PKG_VERSION"));
                     std::process::exit(0);
                 }
+                "--export-pb" => out.export_pb = args.next(),
+                "--verify-pb" => out.verify_pb = args.next().map(PathBuf::from),
+                "--identity" => out.show_identity = true,
+                "--pubkey" => out.verify_pubkey = args.next(),
                 _ => {}
             }
         }
@@ -99,6 +111,60 @@ impl CliArgs {
             if let Err(e) = themes::import_theme(path) {
                 eprintln!("typoist: failed to import theme: {}", e);
                 std::process::exit(1);
+            }
+        }
+
+        if out.show_identity {
+            let id = match crate::verify::Identity::load_or_create() { 
+                Ok(id) => id,
+                Err(e) => { eprintln!("typoist: {}", e); std::process::exit(1); } 
+            };
+            println!("public key: {}", id.public_hex());
+            println!("key file:  {}", crate::config::paths::config_dir().join("identity.key").display());
+            std::process::exit(0);
+        }
+
+        if let Some(mode) = out.export_pb {
+            let chain = crate::verify::PbChain::open();
+            match crate::verify::export::export_records(&chain, Some(&mode)) {
+                Ok(jsons) => {
+                    for j in jsons { println!("{}", j); }
+                    std::process::exit(0);
+                }
+                Err(e) => { eprintln!("typoist: export failed: {}", e); std::process::exit(1); }
+            }
+        }
+
+        if let Some(path) = out.verify_pb {
+            let pubkey_hex = match out.verify_pubkey {
+                Some(k) => k,
+                None => {
+                    eprintln!("typoist: --verify-pb requires --pubkey <hex>");
+                    eprintln!("        get it with `typoist --identity` on the submission machine");
+                    std::process::exit(1);
+                }
+            };
+            let bytes = match hex::decode(&pubkey_hex) {
+                Ok(b) if b.len() == 32 => b,
+                _ => {
+                    eprintln!("typoist: --pubkey must be 32 bytes of hex (64 chars)");
+                    std::process::exit(1);
+                }
+            };
+            let arr: [u8; 32] = bytes.try_into().unwrap();
+            let verifying = match ed25519_dalek::VerifyingKey::from_bytes(&arr) {
+                Ok(v) => v,
+                Err(_) => {
+                    eprintln!("typoist: --pubkey is not a valid Ed25519 public key");
+                    std::process::exit(1);
+                }
+            };
+            match crate::verify::export::verify_file(&path, &verifying) {
+                Ok(report) => {
+                    println!("{}", report.summary());
+                    std::process::exit(if report.ok { 0 } else { 2 });
+                }
+                Err(e) => { eprintln!("typoist: {}", e); std::process::exit(1); }
             }
         }
 
@@ -198,21 +264,23 @@ OPTIONS:
         --list-word-sets      List available word sets and exit
         --no-save             Don't persist settings this session
     -h, --help                Show this help
-    -v, --version             Lists the version currently running
-    --update                  Uses update cli interface to update 
-    --check-update            Checks for updates
+    -v, --version             Show the current version
+        --update              Update in place
+        --check-update        Check for updates without installing
 
-IN-TEST KEYS:
-    tab       new test
-    esc       reset / back
-    ctrl+t         theme picker
-    ctrl+w         cycle word set
-    ctrl+n         cycle mode
-    ctrl+l         toggle live wpm
-    ctrl+a         toggle accuracy
-    ctrl+g         toggle live wpm graph
-    ctrl+h         help
-    ctrl+c    quit
+KEYBINDS:
+    Default bindings (change from the in-app Keybinds screen):
+
+    tab           restart test with new words
+    esc           reset current test / back when idle
+    ctrl+t        open theme picker
+    ctrl+w        cycle word set
+    ctrl+n        cycle mode
+    ctrl+l        toggle live WPM
+    ctrl+a        toggle accuracy display
+    ctrl+g        toggle live WPM graph
+    ctrl+h        open help
+    ctrl+c        quit
 "#
     );
 }
