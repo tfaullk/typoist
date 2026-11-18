@@ -5,8 +5,8 @@ Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
 ## LEADERBOARDS
 | Rank | Username                                                                              | PB (WPM) | Ed25519 Identity                                                 |
 | ---- | ------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------- |
-| 1    | [tfaullk](https://github.com/tfaullk/typoist/blob/main/pbs/tfaullk.jsonl)             | 106.0    | 6b49e9d13892671bfdbfd05a299151f4a2cbbb753d2437d46f26f10cedb14c8c |
-| 2    | [YesYes](https://github.com/tfaullk/typoist/blob/main/pbs/yesyes.jsonl)               | 103.1    | 7099ddf0be967f196dcdbd02ba22f3a4acbdf21d463dfda0200871fdcbf2e3fb |
+| 1    | tfaullk             | 106.0    | 6b49e9d13892671bfdbfd05a299151f4a2cbbb753d2437d46f26f10cedb14c8c |
+| 2    | YesYes              | 103.1    | 7099ddf0be967f196dcdbd02ba22f3a4acbdf21d463dfda0200871fdcbf2e3fb |
 
 
 
