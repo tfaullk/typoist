@@ -34,7 +34,7 @@ Make sure you have a recent Rust toolchain (rustc 1.101.0 or higher), and have c
 
 ```sh
 mkdir -p ~/.local/bin
-curl -fL https://github.com/tfaullk/typoist-update-test/releases/download/2.0.0/typoist-2.0.0-x86_64-unknown-linux-musl -o ~/.local/bin/typoist
+curl -fL https://github.com/tfaullk/typoist/releases/download/2.0.0/typoist-2.0.0-x86_64-unknown-linux-musl -o ~/.local/bin/typoist
 chmod +x ~/.local/bin/typoist
 ```
 
