@@ -3,6 +3,7 @@ A terminal typing practice application.
 Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
 
 ## LEADERBOARDS
+[**Please use this google form to submit PBs**](https://forms.gle/bvPcQBvV9bqAU3VA7)
 | Rank | Username                                                                              | PB (WPM) | Ed25519 Identity                                                 |
 | ---- | ------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------- |
 | 1    | tfaullk             | 106.0    | 6b49e9d13892671bfdbfd05a299151f4a2cbbb753d2437d46f26f10cedb14c8c |
