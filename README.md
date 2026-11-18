@@ -163,12 +163,6 @@ You can copy an existing theme and tweak the RGB values, or import one directly:
 typoist --import-theme ~/Downloads/cool-theme.toml
 ```
 
-## Leaderboards
-
-If you want to be put on a leaderboard that will be in this very README.md, submit your pbs.jsonl file to me. (coming soon)
-On Windows this can be found at `%APPDATA%\Roaming\typoist\pbs.jsonl`
-And on Linux this can be found at `~/.config/typoist/pbs.jsonl`
-
 ## License
 
 Licensed under the **PolyForm Noncommercial License 1.0.0**
