@@ -2,22 +2,6 @@
 A terminal typing practice application.  
 Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
 
-typoist in action
-
-<img src="imgs/TypoistInAction.png" width="750">
-
-results
-
-<img src="imgs/TypoistResults.png" width="750">
-
-theme menu    
-
-<img src="imgs/TypoistThemeMenu.png" width="750">
-
-help screen
-
-<img src="imgs/TypoistHelpMenu.png" width="750">
-
 ## Features
 
 - **Variable time modes**: time 15/30/60/120s
@@ -28,6 +12,9 @@ help screen
 - **Live stats**: wpm, accuracy, and a consistency score based on your per-second wpm samples
 - **Persisted settings**: your theme, mode, and word set are saved between runs
 - **Simple updates**: typoist --update and typoist --check-update are useful tools built-in to keep you up to date
+- **Custom Keybinds**: customize your keybinds
+- **Leaderboards with verification**: Submit personal bests (scroll down for more) and have them verified to ensure fair play
+- **Stenography Mode**: Practice stenography-style typing with support for the leaderboard system
 
 ## Install (Windows)
 
@@ -47,7 +34,7 @@ Make sure you have a recent Rust toolchain (rustc 1.101.0 or higher), and have c
 
 ```sh
 mkdir -p ~/.local/bin
-curl -fL https://github.com/tfaullk/typoist-update-test/releases/download/v1.3.2/typoist-1.3.2-x86_64-unknown-linux-musl -o ~/.local/bin/typoist
+curl -fL https://github.com/tfaullk/typoist-update-test/releases/download/2.0.0/typoist-2.0.0-x86_64-unknown-linux-musl -o ~/.local/bin/typoist
 chmod +x ~/.local/bin/typoist
 ```
 
@@ -71,8 +58,6 @@ fish_add_path ~/.local/bin
 Then just run `typoist` from anywhere.
 
 ## Usage
-
-Just run it and start typing. The timer doesn't start until your first keystroke, so take a breath first.
 
 ```sh
 typoist
@@ -100,6 +85,11 @@ typoist --theme nord --words code --mode "time 60"
 | `-v, --version`         | Show current version                                               |
 | `--update`              | Update to latest version                                           |
 | `--check-update`        | Check for updates                                                  |
+| `--verify-pb`           | Verifies personal best from hash (see more below)                  |
+| `--identity`            | Shows cryptographic identity for verification                      |
+| `--export-pb`           | Exports PB (e.g typoist --export-pb "steno 30" > steno_30.jsonl)   |
+| `--pubkey`              | Companion flag for --verify-pb, allows you to supply the ED25519   |
+|                         | key to verify.                                                     |
 
 
 ## Keybinds
@@ -163,6 +153,12 @@ You can copy an existing theme and tweak the RGB values, or import one directly:
 typoist --import-theme ~/Downloads/cool-theme.toml
 ```
 
-## Licensed
+## Leaderboards
+
+If you want to be put on a leaderboard that will be in this very README.md, submit your pbs.jsonl file to me. (coming soon)
+On Windows this can be found at `%APPDATA%\Roaming\typoist\pbs.jsonl`
+And on Linux this can be found at `~/.config/typoist/pbs.jsonl`
+
+## License
 
 Licensed under the **PolyForm Noncommercial License 1.0.0**
