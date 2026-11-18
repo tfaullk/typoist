@@ -6,7 +6,7 @@ Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
 [**Please use this google form to submit PBs**](https://forms.gle/bvPcQBvV9bqAU3VA7)
 | Rank | Username                                                                              | PB (WPM) | Ed25519 Identity                                                 |
 | ---- | ------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------- |
-| 1    | tfaullk             | 106.0    | 6b49e9d13892671bfdbfd05a299151f4a2cbbb753d2437d46f26f10cedb14c8c |
+| 1    | tfaullk             | 107.1    | 6b49e9d13892671bfdbfd05a299151f4a2cbbb753d2437d46f26f10cedb14c8c |
 | 2    | YesYes              | 103.1    | 7099ddf0be967f196dcdbd02ba22f3a4acbdf21d463dfda0200871fdcbf2e3fb |
 
 **Please note if you have moved systems you will have a new identity and thus personal bests**
