@@ -265,8 +265,13 @@ OPTIONS:
         --no-save             Don't persist settings this session
     -h, --help                Show this help
     -v, --version             Show the current version
-        --update              Update in place
-        --check-update        Check for updates without installing
+    --update                  Update in place
+    --check-update            Check for updates without installing
+    --verify-pb               Verifies personal best from hash (see more in README.md)
+    --identity                Shows cryptographic identity for verification
+    --export-pb               Exports PB (e.g typoist --export-pb "steno 30" > steno_30.jsonl)
+    --pubkey                  Companion flag for --verify-pb, allows you to supply the ED25519   
+                              key to verify. 
 
 KEYBINDS:
     Default bindings (change from the in-app Keybinds screen):
