@@ -2,6 +2,14 @@
 A terminal typing practice application.  
 Built in Rust with [Ratatui](https://github.com/ratatui/ratatui).
 
+## LEADERBOARDS
+| Username                         | PB (WPM) | Ed25519 Identity                                                 |
+| -------------------------------- | ---------|----------------------------------------------------------------- 
+| [YesYes](https://github.com/tfaullk/typoist/blob/main/pbs/yesyes.jsonl)                          | 103.1    | 7099ddf0be967f196dcdbd02ba22f3a4acbdf21d463dfda0200871fdcbf2e3fb |                      
+
+
+
+
 ## Features
 
 - **Variable time modes**: time 15/30/60/120s
